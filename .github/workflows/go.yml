@@ -22,3 +22,13 @@ jobs:
 
       - name: Run tests
         run: go test -v ./main_test.go ./main.go
+
+      - name: Create Release
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        uses: softprops/action-gh-release@v1
+        with:
+          files: my-go-code
+          tag_name: v${{ github.run_number }}
+          generate_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
