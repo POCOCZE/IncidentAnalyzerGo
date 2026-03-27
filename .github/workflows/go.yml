@@ -1,0 +1,24 @@
+name: Compile-Go
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: '1.26.1'
+
+      - name: Compile main.go
+        run: go build -o main ./main.go
+
+      - name: Run tests
+        run: go test -v ./main_test.go ./main.go
