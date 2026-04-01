@@ -222,6 +222,8 @@ func main() {
     // --- Create flags --- //
     file := flag.String("file", "", "Path to incidents JSON file")
     output := flag.String("output", "stdout", "Output type. Options: stdout (default), <your-file-name>")
+    serve := flag.Bool("serve", false, "Start an HTTP server")
+    port := flag.Int("port", 8080, "Port to be used with the HTTP server")
     flag.Parse()
 
     // --- Initialize maps before they can be used --- //
