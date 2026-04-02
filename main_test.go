@@ -16,7 +16,7 @@ func TestMTTRSec(t *testing.T) {
         },
     }
 
-    report.CalcMTTRSec(private)
+    report.calcMTTRSec(private)
     got := report.MTTR
     // 20 / 2 = 10s as MTTR
     want := "10s"
