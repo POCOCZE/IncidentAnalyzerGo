@@ -15,14 +15,9 @@ type IncidentsFile struct {
     Incidents []Incident `json:"incidents"`
 }
 
-type IncidentDuration struct {
-    Seconds float64
-    HMSFormat string
-}
-
-type IncidentPrivate struct {
-    Duration map[string]IncidentDuration
-}
+// type IncidentPrivate struct {
+//     Duration map[string]IncidentDuration
+// }
 
 type IncidentReportDetails struct {
     Title string `json:"title"`
@@ -38,10 +33,17 @@ type IncidentReport struct {
     MTTR string `json:"mttr"`
     ByServices map[string]map[string]IncidentReportDetails `json:"by_services"`
     BySeverity map[string]map[string]IncidentReportDetails `json:"by_severity"`
+    ByID map[string]IncidentReportDetails `json:"by_id"`
+}
+
+type IncidentDuration struct {
+    Seconds float64
+    HMSFormat string
 }
 
 type IncidentStore struct {
     Mu sync.RWMutex
     Incidents []Incident
     Report *IncidentReport
+    Duration map[string]IncidentDuration
 }
