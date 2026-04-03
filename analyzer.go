@@ -6,7 +6,7 @@ import (
 	"time"
 )
 
-func (p *IncidentPrivate) incidentMessage(incident Incident) (string, bool) {
+func (s *IncidentStore) incidentMessage(incident Incident) (string, bool) {
     // Handles message generation for GroupIncidentsBy... functions
     // For resolved incidents print how long it took in HMS format
     // Returns message string and boolean whether the incident is resolved
@@ -15,18 +15,18 @@ func (p *IncidentPrivate) incidentMessage(incident Incident) (string, bool) {
 
     if incident.ResolvedAt != "" {
         isResolved = true
-        resolvedIn := p.Duration[incident.ID].HMSFormat
+        resolvedIn := s.Duration[incident.ID].HMSFormat
         message = fmt.Sprintf("Resolved in %s (Ended: %s)", resolvedIn, incident.ResolvedAt)
     }
 
     return message, isResolved
 }
 
-func (r *IncidentReport) groupIncidentsByService(incident Incident, private *IncidentPrivate) {
+func (r *IncidentReport) groupIncidentsByService(incident Incident, store *IncidentStore) {
     // For each service name assign ServiceDetails struct value.
     // Service name keys are not sorted.
 
-    message, isResolved := private.incidentMessage(incident)
+    message, isResolved := store.incidentMessage(incident)
 
     // Check whether serviceName keys exist, create them otherwise
     _, exists := r.ByServices[incident.Service]
@@ -42,11 +42,9 @@ func (r *IncidentReport) groupIncidentsByService(incident Incident, private *Inc
     }
 }
 
-func (r *IncidentReport) groupIncidentsBySeverity(incident Incident, private *IncidentPrivate) {
+func (r *IncidentReport) groupIncidentsBySeverity(incident Incident, store *IncidentStore) {
     // For each severity assign SeverityDetails struct value.
     // Severity keys are not sorted by severity
-
-    message, isResolved := private.incidentMessage(incident)
 
     // Check whether serviceName keys exist, create them otherwise
     _, exists := r.BySeverity[incident.Severity]
@@ -54,6 +52,7 @@ func (r *IncidentReport) groupIncidentsBySeverity(incident Incident, private *In
         r.BySeverity[incident.Severity] = make(map[string]IncidentReportDetails)
     }
 
+    message, isResolved := store.incidentMessage(incident)
     r.BySeverity[incident.Severity][incident.ID] = IncidentReportDetails{
         Title: incident.Title,
         Service: incident.Service,
@@ -62,19 +61,30 @@ func (r *IncidentReport) groupIncidentsBySeverity(incident Incident, private *In
     }
 }
 
-func (r *IncidentReport) calcMTTRSec(private *IncidentPrivate) {
+func (r *IncidentReport) groupIncidentsByID(incident Incident, store *IncidentStore) {
+    message, isResolved := store.incidentMessage(incident)
+    r.ByID[incident.ID] = IncidentReportDetails{
+        Title: incident.Title,
+        Severity: incident.Severity,
+        Service: incident.Service,
+        Message: message,
+        IsResolved: isResolved,
+    }
+}
+
+func (r *IncidentReport) calcMTTRSec(store *IncidentStore) {
     // Calculate Mean time to recovery - average across all
     // First is all incident durations summed, and averaged across only resolved incidents. 
     // Unresolved are not kept in mind because their duration is effectively zero and thus would avoid the calculations.
 
     // Sum all incident times (unresolved gets 0 seconds)
     var sum float64
-    for _, incidentDuration := range private.Duration {
+    for _, incidentDuration := range store.Duration {
         sum += incidentDuration.Seconds
     }
 
     // Calculate average across only resolved ones
-    if len(private.Duration) == 0 {
+    if len(store.Duration) == 0 {
         log.Fatalf("Error: Cannot devide by zero")
     }
     resolvedIncidentCount := r.IncidentsCount - len(r.UnresolvedIDs)
@@ -84,7 +94,7 @@ func (r *IncidentReport) calcMTTRSec(private *IncidentPrivate) {
     r.MTTR = hms.String()
 }
 
-func (p *IncidentPrivate) calcIncidentDuration(incident Incident) { // , allIncidentsDuration map[string]float64 -> as output
+func (s *IncidentStore) calcIncidentDuration(incident Incident) { // , allIncidentsDuration map[string]float64 -> as output
     // Calculate incident duration for all incidents
     // Unresolved incidents will have 0 seconds duration, resolved one gets calculated
 
@@ -105,34 +115,34 @@ func (p *IncidentPrivate) calcIncidentDuration(incident Incident) { // , allInci
 
     // hms := SecToHMS(int(durationSec))
     hms := time.Duration(durationSec) * time.Second
-    p.Duration[incident.ID] = IncidentDuration{
+    s.Duration[incident.ID] = IncidentDuration{
         Seconds: durationSec,
         HMSFormat: hms.String(),
     }
 }
 
-func buildReport(incidents []Incident) *IncidentReport {
+func (s *IncidentStore) recompute() {
     // --- Initialize maps before they can be used --- //
     report := NewIncidentReport()
-    private := NewIncidentPrivate()
 
     // Calculate incidents length
-    report.IncidentsCount = len(incidents)
+    report.IncidentsCount = len(s.Incidents)
 
-    for _, incident := range incidents {
+    for _, incident := range s.Incidents {
         if incident.ResolvedAt == "" {
             // --- Add unresolved to Slice --- //
             report.UnresolvedIDs = append(report.UnresolvedIDs, incident.ID)
         }
 
         // --- Calculate incident duration and group incidents --- //
-        private.calcIncidentDuration(incident)
-        report.groupIncidentsByService(incident, private)
-        report.groupIncidentsBySeverity(incident, private)
+        s.calcIncidentDuration(incident)
+        report.groupIncidentsByService(incident, s)
+        report.groupIncidentsBySeverity(incident, s)
+        report.groupIncidentsByID(incident, s)
     }
 
     // --- Calculate Mean time to recovery --- //
-    report.calcMTTRSec(private)
+    report.calcMTTRSec(s)
 
-    return report
+    s.Report = report
 }
