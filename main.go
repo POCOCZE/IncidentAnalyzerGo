@@ -13,6 +13,7 @@ func NewIncidentReport() *IncidentReport {
     return &IncidentReport{
         ByServices: make(map[string]map[string]IncidentReportDetails),
         BySeverity: make(map[string]map[string]IncidentReportDetails),
+        ByID: make(map[string]IncidentReportDetails),
     }
 }
 
@@ -20,19 +21,16 @@ func NewIncidentStore(incidents []Incident) *IncidentStore {
     // This is constructor function
     store := &IncidentStore{
         Incidents: make([]Incident, 0),
+        Duration: make(map[string]IncidentDuration),
     }
-    report := buildReport(incidents)
 
-    store.Report = report
+    for _, incident := range incidents {
+        store.addIncident(incident)
+    }
+
     return store
 }
 
-func NewIncidentPrivate() *IncidentPrivate {
-    // Prepares structure for private variable by initialiting its structure to be used
-    return &IncidentPrivate{
-        Duration: make(map[string]IncidentDuration),
-    }
-}
 func (f *IncidentsFile) OpenInputFile(file string) {
     // Open JSON file from input - file path
 
@@ -56,7 +54,7 @@ func main() {
     serve := flag.Bool("serve", false, "Start an HTTP server")
     port := flag.String("port", "8080", "Port to be used with the HTTP server")
     flag.Parse()
-    
+
     // --- Inizialize instance and open JSON --- //
     incidentsFile := &IncidentsFile{}
     incidentsFile.OpenInputFile(*file)
