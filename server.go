@@ -31,10 +31,10 @@ func getIncidentsBySeverity(store *IncidentStore) http.HandlerFunc{
 
 		if severity == "" {
 			encodeJSON(w, report.ByID, "")
-			log.Printf("Requested all incidents")
+			log.Printf("INFO: Requested all incidents")
 		} else {
 			encodeJSON(w, report.BySeverity[severity], "")
-			log.Printf("Requested %s severity", severity)
+			log.Printf("INFO: Requested %s severity", severity)
 		}
 	}
 }
@@ -65,12 +65,33 @@ func getIncidentsByID(store *IncidentStore) http.HandlerFunc {
 		report := store.getReport()
 		_, exist := report.ByID[incidentID]
 		if !exist {
-			errMessage := map[string]string{"error": fmt.Sprintf("incident ID (%s) does not exist", incidentID)}
+			errMessage := map[string]string{"error": fmt.Sprintf("non-existent incident ID (%s)", incidentID)}
 			encodeJSON(w, errMessage, "")
-			log.Printf("ERR: Requested incident ID: %s, does not exist!", incidentID)
+			log.Printf("ERR: Requested non-existent incident ID: %s", incidentID)
 		} else {
 			encodeJSON(w, report.ByID[incidentID], "")
 			log.Printf("INFO: Requested incident ID: %s", incidentID)
+		}
+	}
+}
+
+func deleteIncidentByID(store *IncidentStore) http.HandlerFunc{
+	return func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Add("content-Type", "application/json")
+		incidentID := r.PathValue("id")
+
+		var exist bool
+		for _, incident := range store.Incidents {
+			if incident.ID == incidentID {
+				exist = true
+				store.deleteIncident(incidentID)
+				encodeJSON(w, map[string]string{"success": fmt.Sprintf("deleted incident ID %s", incidentID)}, "")
+				log.Printf("INFO: Successfully deleted incident with ID %s", incidentID)
+			}
+		}
+		if !exist {
+			encodeJSON(w, map[string]string{"error": fmt.Sprintf("cannot delete incident ID %s - not found", incidentID)}, "")
+			log.Printf("ERR: cannot delete incident with ID %s - not found", incidentID)
 		}
 	}
 }
@@ -80,6 +101,7 @@ func startServer(port string, store *IncidentStore) {
 	http.HandleFunc("GET /incidents", getIncidentsBySeverity(store))
 	http.HandleFunc("POST /incidents", postIncidents(store))
 	http.HandleFunc("GET /incidents/{id}", getIncidentsByID(store))
+	http.HandleFunc("DELETE /incidents/{id}", deleteIncidentByID(store))
 
 	log.Printf("INFO: Server listening on port :%s", port)
 	err := http.ListenAndServe(":"+port, nil)
@@ -97,6 +119,21 @@ func (s *IncidentStore) addIncident(incident Incident) {
 	s.Incidents = append(s.Incidents, incident)
 	s.recompute()
 
+}
+
+func (s *IncidentStore) deleteIncident(removeKey string) {
+	s.Mu.Lock()
+	defer s.Mu.Unlock()
+
+	var newIncidents []Incident
+	for _, incident := range s.Incidents {
+		if incident.ID != removeKey {
+			newIncidents = append(newIncidents, incident)
+		}
+	}
+	// Set new incidents list and rebuild report
+	s.Incidents = newIncidents
+	s.recompute()
 }
 
 func (s *IncidentStore) getReport() *IncidentReport {
