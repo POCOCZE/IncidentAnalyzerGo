@@ -23,6 +23,16 @@ func healthHandler(w http.ResponseWriter, r *http.Request) {
 	encodeJSON(w, status.Status, "")
 }
 
+func getIncidentReport(store *IncidentStore) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Add("Content-Type", "application/json")
+		report := store.getReport()
+
+		encodeJSON(w, report, "")
+		log.Printf("INFO: Requested report")
+	}
+}
+
 func getGroupedIncidents(store *IncidentStore) http.HandlerFunc{
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
@@ -102,6 +112,7 @@ func deleteIncidentByID(store *IncidentStore) http.HandlerFunc{
 
 func startServer(port string, store *IncidentStore) {
 	http.HandleFunc("/healthz", healthHandler)
+	http.HandleFunc("GET /report", getIncidentReport(store))
 	http.HandleFunc("GET /incidents", getGroupedIncidents(store))
 	http.HandleFunc("POST /incidents", postIncidents(store))
 	http.HandleFunc("GET /incidents/{id}", getIncidentsByID(store))
