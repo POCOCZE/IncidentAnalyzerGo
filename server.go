@@ -43,7 +43,7 @@ func getGroupedIncidents(store *IncidentStore) http.HandlerFunc{
 		if severity != "" {
 			encodeJSON(w, report.BySeverity[severity], "")
 			log.Printf("INFO: Requested %s severity", severity)
-		} else if service != "" {				
+		} else if service != "" {
 			encodeJSON(w, report.ByServices[service], "")
 			log.Printf("INFO: Requested %s severity", service)
 		} else {
