@@ -10,17 +10,10 @@ import (
 func healthHandler(w http.ResponseWriter, r *http.Request) {
 	// Health status endpoint
 	// Set content type to application/json	
-	// Write {"status": "ok"} as JSON reposnse
-	status := struct {
-		Status map[string]string
-	}{
-		Status: map[string]string{
-			"status": "ok",
-		},
-	}
+	// Write OK as JSON reposnse
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	encodeJSON(w, status.Status, "")
+	encodeJSON(w, map[string]string{"status": "ok"}, "")
 }
 
 func getIncidentReport(store *IncidentStore) http.HandlerFunc {
@@ -28,6 +21,7 @@ func getIncidentReport(store *IncidentStore) http.HandlerFunc {
 		w.Header().Add("Content-Type", "application/json")
 		report := store.getReport()
 
+		w.WriteHeader(http.StatusOK)
 		encodeJSON(w, report, "")
 		log.Printf("INFO: Requested report")
 	}
@@ -43,22 +37,27 @@ func getGroupedIncidents(store *IncidentStore) http.HandlerFunc{
 		if severity != "" {
 			_, exist := report.BySeverity[severity]
 			if !exist {
+				w.WriteHeader(http.StatusBadRequest)
 				encodeJSON(w, map[string]string{"error": fmt.Sprintf("severity %s does not exist", severity)}, "")
 				log.Printf("ERR: Severity %s does not exist", service)
 			} else {
+				w.WriteHeader(http.StatusOK)
 				encodeJSON(w, report.BySeverity[severity], "")
 				log.Printf("INFO: Requested %s severity", severity)
 			}
 		} else if service != "" {
 			_, exist := report.ByServices[service]
 			if !exist {
+				w.WriteHeader(http.StatusBadRequest)
 				encodeJSON(w, map[string]string{"error": fmt.Sprintf("service %s does not exist", service)}, "")
 				log.Printf("ERR: Service %s does not exist", service)
 			} else {
+				w.WriteHeader(http.StatusOK)
 				encodeJSON(w, report.ByServices[service], "")
 				log.Printf("INFO: Requested %s severity", service)
 			}
 		} else {
+			w.WriteHeader(http.StatusOK)
 			encodeJSON(w, report.ByID, "")
 			log.Printf("INFO: Requested all incidents")
 		}
@@ -77,7 +76,9 @@ func postIncidents(store *IncidentStore) http.HandlerFunc {
 			return
 		}
 		store.addIncident(incident)
+		w.WriteHeader(http.StatusCreated)
 
+		// Response with added incident ID
 		response, _ := json.Marshal(incident.ID)
 		log.Printf("INFO: Added new incident ID: %s", string(response))
 	}
@@ -92,9 +93,11 @@ func getIncidentsByID(store *IncidentStore) http.HandlerFunc {
 		_, exist := report.ByID[incidentID]
 		if !exist {
 			errMessage := map[string]string{"error": fmt.Sprintf("non-existent incident ID (%s)", incidentID)}
+			w.WriteHeader(http.StatusBadRequest)
 			encodeJSON(w, errMessage, "")
 			log.Printf("ERR: Requested non-existent incident ID: %s", incidentID)
 		} else {
+			w.WriteHeader(http.StatusOK)
 			encodeJSON(w, report.ByID[incidentID], "")
 			log.Printf("INFO: Requested incident ID: %s", incidentID)
 		}
@@ -106,18 +109,17 @@ func deleteIncidentByID(store *IncidentStore) http.HandlerFunc{
 		w.Header().Add("content-Type", "application/json")
 		incidentID := r.PathValue("id")
 
-		var exist bool
-		for _, incident := range store.Incidents {
-			if incident.ID == incidentID {
-				exist = true
-				store.deleteIncident(incidentID)
-				encodeJSON(w, map[string]string{"success": fmt.Sprintf("deleted incident ID %s", incidentID)}, "")
-				log.Printf("INFO: Successfully deleted incident with ID %s", incidentID)
-			}
-		}
-		if !exist {
-			encodeJSON(w, map[string]string{"error": fmt.Sprintf("cannot delete incident ID %s - not found", incidentID)}, "")
-			log.Printf("ERR: cannot delete incident with ID %s - not found", incidentID)
+		// If incidentID gathered from path actually exist
+		// If not, return error 404
+		if store.deleteIncident(incidentID) {
+			// w.WriteHeader(http.StatusNoContent)
+			w.WriteHeader(http.StatusOK)
+			encodeJSON(w, map[string]string{"success": fmt.Sprintf("deleted incident ID %s", incidentID)}, "")
+			log.Printf("INFO: Successfully deleted incident with ID %s", incidentID)
+		} else {
+			w.WriteHeader(http.StatusNotFound)
+			encodeJSON(w, map[string]string{"error": fmt.Sprintf("incident ID %s not found", incidentID)}, "")
+			log.Printf("ERR: Incident with ID %s not found", incidentID)
 		}
 	}
 }
@@ -145,22 +147,28 @@ func (s *IncidentStore) addIncident(incident Incident) {
 	// Append incident and rebuild report
 	s.Incidents = append(s.Incidents, incident)
 	s.recompute()
-
 }
 
-func (s *IncidentStore) deleteIncident(removeKey string) {
+func (s *IncidentStore) deleteIncident(removeKey string) bool {
 	s.Mu.Lock()
 	defer s.Mu.Unlock()
 
 	var newIncidents []Incident
+	var found bool
 	for _, incident := range s.Incidents {
-		if incident.ID != removeKey {
+		if incident.ID == removeKey {
+			found = true
+		} else {	
 			newIncidents = append(newIncidents, incident)
 		}
 	}
-	// Set new incidents list and rebuild report
-	s.Incidents = newIncidents
-	s.recompute()
+	if found {
+		// Set new incidents list and rebuild report
+		s.Incidents = newIncidents
+		s.recompute()
+	}
+
+	return found
 }
 
 func (s *IncidentStore) getReport() *IncidentReport {
