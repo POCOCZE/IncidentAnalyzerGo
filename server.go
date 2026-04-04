@@ -23,18 +23,22 @@ func healthHandler(w http.ResponseWriter, r *http.Request) {
 	encodeJSON(w, status.Status, "")
 }
 
-func getIncidentsBySeverity(store *IncidentStore) http.HandlerFunc{
+func getGroupedIncidents(store *IncidentStore) http.HandlerFunc{
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		severity := r.URL.Query().Get("severity")
+		service := r.URL.Query().Get("service")
 		report := store.getReport()
 
-		if severity == "" {
-			encodeJSON(w, report.ByID, "")
-			log.Printf("INFO: Requested all incidents")
-		} else {
+		if severity != "" {
 			encodeJSON(w, report.BySeverity[severity], "")
 			log.Printf("INFO: Requested %s severity", severity)
+		} else if service != "" {				
+			encodeJSON(w, report.ByServices[service], "")
+			log.Printf("INFO: Requested %s severity", service)
+		} else {
+			encodeJSON(w, report.ByID, "")
+			log.Printf("INFO: Requested all incidents")
 		}
 	}
 }
@@ -98,7 +102,7 @@ func deleteIncidentByID(store *IncidentStore) http.HandlerFunc{
 
 func startServer(port string, store *IncidentStore) {
 	http.HandleFunc("/healthz", healthHandler)
-	http.HandleFunc("GET /incidents", getIncidentsBySeverity(store))
+	http.HandleFunc("GET /incidents", getGroupedIncidents(store))
 	http.HandleFunc("POST /incidents", postIncidents(store))
 	http.HandleFunc("GET /incidents/{id}", getIncidentsByID(store))
 	http.HandleFunc("DELETE /incidents/{id}", deleteIncidentByID(store))
