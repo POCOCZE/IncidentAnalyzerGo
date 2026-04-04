@@ -1,3 +1,5 @@
+![go serve output](images/go-serve.png)
+
 # Incident Log Analyzer
 
 ## What it does
@@ -20,8 +22,10 @@
 7. `time.Parse` and `time.Duration`
 8. `fmt.Println`, `fmt.Sprintf`, `log` package
 9. `go test` — writing your first test
+10. `net/http` package for exposing APIs
+11. `sync.RWMutex` for parallel read or one write lock
 
-**This project does not use those concepts:** interfaces, goroutines, channels, HTTP or external dependencies.
+**This project does not use those concepts:** interfaces, goroutines, channels or external dependencies.
 
 ## Available parameters
 
