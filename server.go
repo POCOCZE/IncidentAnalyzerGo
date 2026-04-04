@@ -52,7 +52,7 @@ func getGroupedIncidents(store *IncidentStore) http.HandlerFunc{
 		} else if service != "" {
 			_, exist := report.ByServices[service]
 			if !exist {
-				encodeJSON(w, map[string]string{"error": fmt.Sprintf("service %s does not exist", severity)}, "")
+				encodeJSON(w, map[string]string{"error": fmt.Sprintf("service %s does not exist", service)}, "")
 				log.Printf("ERR: Service %s does not exist", service)
 			} else {
 				encodeJSON(w, report.ByServices[service], "")
