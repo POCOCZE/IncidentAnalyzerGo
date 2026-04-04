@@ -41,11 +41,23 @@ func getGroupedIncidents(store *IncidentStore) http.HandlerFunc{
 		report := store.getReport()
 
 		if severity != "" {
-			encodeJSON(w, report.BySeverity[severity], "")
-			log.Printf("INFO: Requested %s severity", severity)
+			_, exist := report.BySeverity[severity]
+			if !exist {
+				encodeJSON(w, map[string]string{"error": fmt.Sprintf("severity %s does not exist", severity)}, "")
+				log.Printf("ERR: Severity %s does not exist", service)
+			} else {
+				encodeJSON(w, report.BySeverity[severity], "")
+				log.Printf("INFO: Requested %s severity", severity)
+			}
 		} else if service != "" {
-			encodeJSON(w, report.ByServices[service], "")
-			log.Printf("INFO: Requested %s severity", service)
+			_, exist := report.ByServices[service]
+			if !exist {
+				encodeJSON(w, map[string]string{"error": fmt.Sprintf("service %s does not exist", severity)}, "")
+				log.Printf("ERR: Service %s does not exist", service)
+			} else {
+				encodeJSON(w, report.ByServices[service], "")
+				log.Printf("INFO: Requested %s severity", service)
+			}
 		} else {
 			encodeJSON(w, report.ByID, "")
 			log.Printf("INFO: Requested all incidents")
