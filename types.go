@@ -3,11 +3,11 @@ package main
 import "sync"
 
 type Incident struct {
-    ID string `json:"id"`
-    Title string `json:"title"`
-    Severity string `json:"severity"`
-    Service string `json:"service_name"`
-    StartedAt string `json:"started_at"`
+    ID string `json:"id" validate:"required"`
+    Title string `json:"title" validate:"required"`
+    Severity string `json:"severity" validate:"required"`
+    Service string `json:"service_name" validate:"required"`
+    StartedAt string `json:"started_at" validate:"required"`
     ResolvedAt string `json:"resolved_at"`
 }
 

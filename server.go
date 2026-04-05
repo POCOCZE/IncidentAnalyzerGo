@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+
+	"github.com/go-playground/validator/v10"
 )
 
 func healthHandler(w http.ResponseWriter, r *http.Request) {
@@ -75,12 +77,21 @@ func postIncidents(store *IncidentStore) http.HandlerFunc {
 			log.Printf("ERR: %s", err)
 			return
 		}
-		store.addIncident(incident)
-		w.WriteHeader(http.StatusCreated)
 
-		// Response with added incident ID
-		response, _ := json.Marshal(incident.ID)
-		log.Printf("INFO: Added new incident ID: %s", string(response))
+		err = store.addIncident(incident)
+		if err != nil {
+			w.WriteHeader(http.StatusBadRequest)
+			encodeJSON(w, map[string]string{"error": fmt.Sprintf("invalid structure: %s", err)}, "")
+			log.Printf("ERR: Invalid structure: %s", err)
+		} else {
+			report := store.getReport()
+			addedIncident := report.ByID[incident.ID]
+	
+			w.WriteHeader(http.StatusCreated)
+	
+			encodeJSON(w, addedIncident, "")
+			log.Printf("INFO: Added new incident ID: %s", incident.ID)
+		}
 	}
 }
 
@@ -139,14 +150,23 @@ func startServer(port string, store *IncidentStore) {
 	}
 }
 
-func (s *IncidentStore) addIncident(incident Incident) {
+func (s *IncidentStore) addIncident(incident Incident) error {
 	// Add write lock with mutex
 	s.Mu.Lock()
 	defer s.Mu.Unlock()
 
+	var validate *validator.Validate
+	validate = validator.New(validator.WithRequiredStructEnabled())
+	err := validate.Struct(incident)
+	if err != nil {
+		return err
+	}
+
 	// Append incident and rebuild report
 	s.Incidents = append(s.Incidents, incident)
 	s.recompute()
+
+	return nil
 }
 
 func (s *IncidentStore) deleteIncident(removeKey string) bool {
