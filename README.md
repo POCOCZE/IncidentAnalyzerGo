@@ -24,8 +24,10 @@
 9. `go test` — writing your first test
 10. `net/http` package for exposing APIs
 11. `sync.RWMutex` for parallel read or one write lock
+12. Validator (ext. lib) that checks POST request struct
+13. `database/sql` with `pgx` for persistent data storage in PG database
 
-**This project does not use those concepts:** interfaces, goroutines, channels or external dependencies.
+**This project does not use those concepts:** goroutines, channels
 
 ## Available parameters
 

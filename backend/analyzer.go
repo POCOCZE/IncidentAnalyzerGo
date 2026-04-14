@@ -2,31 +2,30 @@ package main
 
 import (
 	"fmt"
-	"log"
 	"time"
 )
 
-func (s *IncidentStore) incidentMessage(incident Incident) (string, bool) {
+func (r *IncidentReport) incidentMessage(incident Incident, durations map[string]IncidentDuration) (string, bool) {
     // Handles message generation for GroupIncidentsBy... functions
     // For resolved incidents print how long it took in HMS format
     // Returns message string and boolean whether the incident is resolved
     var isResolved bool
     message := fmt.Sprintf("Pending (Started: %s)", incident.StartedAt)
 
-    if incident.ResolvedAt != "" {
+    if incident.ResolvedAt != nil {
         isResolved = true
-        resolvedIn := s.Duration[incident.ID].HMSFormat
+        resolvedIn := durations[incident.ID].HMSFormat
         message = fmt.Sprintf("Resolved in %s (Ended: %s)", resolvedIn, incident.ResolvedAt)
     }
 
     return message, isResolved
 }
 
-func (r *IncidentReport) groupIncidentsByService(incident Incident, store *IncidentStore) {
+func (r *IncidentReport) groupIncidentsByService(incident Incident, durations map[string]IncidentDuration) {
     // For each service name assign ServiceDetails struct value.
     // Service name keys are not sorted.
 
-    message, isResolved := store.incidentMessage(incident)
+    message, isResolved := r.incidentMessage(incident, durations)
 
     // Check whether serviceName keys exist, create them otherwise
     _, exists := r.ByServices[incident.Service]
@@ -42,7 +41,7 @@ func (r *IncidentReport) groupIncidentsByService(incident Incident, store *Incid
     }
 }
 
-func (r *IncidentReport) groupIncidentsBySeverity(incident Incident, store *IncidentStore) {
+func (r *IncidentReport) groupIncidentsBySeverity(incident Incident, durations map[string]IncidentDuration) {
     // For each severity assign SeverityDetails struct value.
     // Severity keys are not sorted by severity
 
@@ -52,7 +51,7 @@ func (r *IncidentReport) groupIncidentsBySeverity(incident Incident, store *Inci
         r.BySeverity[incident.Severity] = make(map[string]IncidentReportDetails)
     }
 
-    message, isResolved := store.incidentMessage(incident)
+    message, isResolved := r.incidentMessage(incident, durations)
     r.BySeverity[incident.Severity][incident.ID] = IncidentReportDetails{
         Title: incident.Title,
         Service: incident.Service,
@@ -61,8 +60,8 @@ func (r *IncidentReport) groupIncidentsBySeverity(incident Incident, store *Inci
     }
 }
 
-func (r *IncidentReport) groupIncidentsByID(incident Incident, store *IncidentStore) {
-    message, isResolved := store.incidentMessage(incident)
+func (r *IncidentReport) groupIncidentsByID(incident Incident, durations map[string]IncidentDuration) {
+    message, isResolved := r.incidentMessage(incident, durations)
     r.ByID[incident.ID] = IncidentReportDetails{
         Title: incident.Title,
         Severity: incident.Severity,
@@ -72,77 +71,74 @@ func (r *IncidentReport) groupIncidentsByID(incident Incident, store *IncidentSt
     }
 }
 
-func (r *IncidentReport) calcMTTRSec(store *IncidentStore) {
+func (r *IncidentReport) calcMTTRSec(durations map[string]IncidentDuration) error {
     // Calculate Mean time to recovery - average across all
     // First is all incident durations summed, and averaged across only resolved incidents. 
     // Unresolved are not kept in mind because their duration is effectively zero and thus would avoid the calculations.
 
     // Sum all incident times (unresolved gets 0 seconds)
     var sum float64
-    for _, incidentDuration := range store.Duration {
+    for _, incidentDuration := range durations {
         sum += incidentDuration.Seconds
     }
 
     // Calculate average across only resolved ones
-    if len(store.Duration) == 0 {
-        log.Fatalf("Error: Cannot devide by zero")
+    if len(durations) == 0 {
+        return fmt.Errorf("cannot devide by zero due to missing incidents")
     }
     resolvedIncidentCount := r.IncidentsCount - len(r.UnresolvedIDs)
     avgSeconds := int(sum / float64(resolvedIncidentCount))
 
     hms := time.Duration(avgSeconds) * time.Second
     r.MTTR = hms.String()
+
+    return nil
 }
 
-func (s *IncidentStore) calcIncidentDuration(incident Incident) { // , allIncidentsDuration map[string]float64 -> as output
+func calcIncidentDuration(incident Incident, durations map[string]IncidentDuration) {
+    // , allIncidentsDuration map[string]float64 -> as output
     // Calculate incident duration for all incidents
     // Unresolved incidents will have 0 seconds duration, resolved one gets calculated
 
     var durationSec float64
-    if incident.ResolvedAt != "" {
-        startedAt, err := time.Parse(time.RFC3339, incident.StartedAt)
-        if err != nil {
-            log.Fatalf("Error occured while converting time %s", err)
-        }
-    
-        resolvedAt, err := time.Parse(time.RFC3339, incident.ResolvedAt)
-        if err != nil {
-            log.Fatalf("Error occured while converting time %s", err)
-        }
-
-        durationSec = resolvedAt.Sub(startedAt).Seconds()
+    if incident.ResolvedAt != nil {
+        startedAt := incident.StartedAt
+        resolvedAt := incident.ResolvedAt
+        durationSec = resolvedAt.Sub(*startedAt).Seconds()
     }
 
-    // hms := SecToHMS(int(durationSec))
     hms := time.Duration(durationSec) * time.Second
-    s.Duration[incident.ID] = IncidentDuration{
+    durations[incident.ID] = IncidentDuration{
         Seconds: durationSec,
         HMSFormat: hms.String(),
     }
 }
 
-func (s *IncidentStore) recompute() {
+func BuildReport(incidents []Incident) (*IncidentReport, error) {
     // --- Initialize maps before they can be used --- //
     report := NewIncidentReport()
+    report.IncidentsCount = len(incidents)
 
-    // Calculate incidents length
-    report.IncidentsCount = len(s.Incidents)
-
-    for _, incident := range s.Incidents {
-        if incident.ResolvedAt == "" {
-            // --- Add unresolved to Slice --- //
+    // Create temporary duration storage
+    durations := make(map[string]IncidentDuration)
+    for _, incident := range incidents {
+        // --- Add unresolved to Slice --- //
+        if incident.ResolvedAt == nil {
             report.UnresolvedIDs = append(report.UnresolvedIDs, incident.ID)
         }
 
         // --- Calculate incident duration and group incidents --- //
-        s.calcIncidentDuration(incident)
-        report.groupIncidentsByService(incident, s)
-        report.groupIncidentsBySeverity(incident, s)
-        report.groupIncidentsByID(incident, s)
+        calcIncidentDuration(incident, durations)
+        report.groupIncidentsByService(incident, durations)
+        report.groupIncidentsBySeverity(incident, durations)
+        report.groupIncidentsByID(incident, durations)
     }
 
     // --- Calculate Mean time to recovery --- //
-    report.calcMTTRSec(s)
+    err := report.calcMTTRSec(durations)
+    if err != nil {
+        return &IncidentReport{}, err
+    }
 
-    s.Report = report
+    return report, nil
 }
