@@ -9,11 +9,9 @@ func TestMTTRSec(t *testing.T) {
         MTTR: "",
 	}
 
-    duration := &IncidentStore{
-        Duration: map[string]IncidentDuration{
-            "Incident1": {Seconds: 10, HMSFormat: "0m10s"},
-            "Incident2": {Seconds: 10, HMSFormat: "0m10s"},
-        },
+    duration := map[string]IncidentDuration{
+        "Incident1": {Seconds: 10, HMSFormat: "0m10s"},
+        "Incident2": {Seconds: 10, HMSFormat: "0m10s"},
     }
 
     report.calcMTTRSec(duration)
