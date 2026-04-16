@@ -1,0 +1,11 @@
+@import "tailwindcss";
+@plugin "daisyui" {
+    themes: cupcake --default, aqua --prefersdark;
+}
+@plugin "daisyui/theme" {
+    name: "cupcake";
+    default: true;
+    --color-base-100: rgb(205 205 205);
+    --color-primary: blue;
+    --color-secondary: teal;
+}
