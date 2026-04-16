@@ -59,7 +59,7 @@ const IncidentList = () => {
             {/* key= forces to show the current value, onChange= when user picks something, state needs to be updated (setSevFilter), this causes rerender, which updates the dropdown to match */}
             <div className='flex justify-end items-center'>
                 <p className='text-xs text-base-content/50 mr-1 w-12 mb-1'>Filter by severity</p>
-                <select defaultValue={filter} value={filter} onChange={(e) => setFilter(e.target.value)} className='select select-sm w-22 text-base-content rounded-md mb-1'>
+                <select value={filter} onChange={(e) => setFilter(e.target.value)} className='select select-sm w-23 text-base-content rounded-md mb-1'>
                     <option value="all">All</option>
                     <option value="critical">Critical</option>
                     <option value="high">High</option>
