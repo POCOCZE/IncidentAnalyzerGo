@@ -28,7 +28,10 @@ const HealthStatus = () => {
     }, []) // Empty array - run only once
 
     if (loading) {
-        return <p className="text-orange-300">Loading...</p>
+        // return <p className="text-orange-300">Loading...</p>
+        return (
+            <span className="loading loading-spinner loading-xs">Loading</span>
+        )
     }
 
     if (error) {
