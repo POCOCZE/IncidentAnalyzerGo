@@ -16,8 +16,6 @@ const IncidentList = () => {
     const [error, setError] = useState<string | null>(null)
     // Variable for severity dropdown menu
     const [filter, setFilter] = useState<string>("all")
-    // variable for incident deletion
-    // const [incidentID, setIncidentID] = useState<string | null>(null)
 
     useEffect(() => {
         const fetchIncidents = async () => {
@@ -77,11 +75,11 @@ const IncidentList = () => {
         : incidents.filter(inc => inc.severity === filter)
 
     return (
-        <div className='flex flex-col px-3 pt-3 justify-center'>
+        <div className='flex flex-col px-3 pt-3 justify-center grow rounded-xl h-[97vh] m-4 bg-base-300'>
             <span className='text-2xl text-center font-semibold'>Incident list</span>
             <div className='flex justify-end items-center'>
                 <p className='text-xs text-base-content/50 mr-1 w-12 mb-2'>Filter by severity</p>
-                <select value={filter} onChange={(e) => setFilter(e.target.value)} className='select select-sm w-23 text-base-content rounded-md mb-1'>
+                <select value={filter} onChange={(e) => setFilter(e.target.value)} className='select select-sm w-23 text-base-content rounded-xl mb-1'>
                     <option value="all">All</option>
                     <option value="critical">Critical</option>
                     <option value="high">High</option>
@@ -89,7 +87,7 @@ const IncidentList = () => {
                     <option value="low">Low</option>
                 </select>
             </div>
-            <div className='rounded-md bg-base-200 overflow-auto lg:h-[89.5vh] h-[84.5vh]'>
+            <div className='rounded-xl bg-base-200 overflow-auto lg:h-[89.5vh] h-[84.5vh]'>
                 <table className='table table-md table-pin-rows table-pin-cols min-w-full'>
                     <thead>
                         <tr>
