@@ -28,17 +28,27 @@ const HealthStatus = () => {
     }, []) // Empty array - run only once
 
     if (loading) {
-        // return <p className="text-orange-300">Loading...</p>
         return (
-            <span className="loading loading-spinner loading-xs">Loading</span>
+            <span className="loading loading-spinner loading-xs rounded">Loading</span>
         )
     }
 
     if (error) {
-        return <p className="text-red-600">Error: {error}</p>
+        // return <ToastNotification duration={10000} message={`Error ${error}`} toastLevel='alert-error' toastPos='toast-top toast-right'/>
+        return (
+            <div className="flex items-center rounded-xl p-1 bg-red-100">
+                <div aria-label="error" className="status status-error animate-pulse"></div>
+                <span className="text-sm text-base-content pl-1">Status</span>
+            </div>
+        )
     }
 
-    return <p className="text-green-500">Status: {status}</p>
+    return (
+        <div className="flex items-center bg-base-200 rounded-xl p-1">
+            <div aria-label="success" className="status status-success animate-none"></div>
+            <span className="text-xs text-base-content pl-1">Status</span>
+        </div>
+    )
 }
 
 export default HealthStatus
