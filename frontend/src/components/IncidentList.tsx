@@ -1,4 +1,5 @@
 import {useState, useEffect } from 'react'
+import { OneButtonModal } from './Modal'
 
 interface Incident {
     id: string
@@ -15,6 +16,8 @@ const IncidentList = () => {
     const [error, setError] = useState<string | null>(null)
     // Variable for severity dropdown menu
     const [filter, setFilter] = useState<string>("all")
+    // variable for incident deletion
+    // const [incidentID, setIncidentID] = useState<string | null>(null)
 
     useEffect(() => {
         const fetchIncidents = async () => {
@@ -33,9 +36,28 @@ const IncidentList = () => {
         }
         fetchIncidents()
     }, [])
+    
+    const deleteIncident = async (incidentID: string) => {
+        try {
+            const response = await fetch(`http://localhost:8080/incidents/${incidentID}`, {method: "DELETE"})
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}`)
+            }
+            setIncidents(incidents.filter(inc => inc.id !== incidentID))
+        } catch (err) {
+            setError(err instanceof Error ? err.message : "Unknown error")
+        }
+    }
 
     if (loading) {
-        return <p className='text-orange-300'>Loading...</p>
+        return (
+            <div className="flex w-52 justify-center items-center flex-col gap-4">
+                <div className="skeleton h-4 w-full"></div>
+                <div className="skeleton h-4 w-28"></div>
+                <div className="skeleton h-4 w-40"></div>
+                <div className="skeleton h-4 w-34"></div>
+            </div>
+        )
     }
 
     if (error) {
@@ -43,9 +65,10 @@ const IncidentList = () => {
     }
 
     const severityColor: Record<string, string> = {
-        critical: 'text-red-600/70',
-        high: 'text-amber-600',
-        medium: 'text-amber-400/80',
+        critical: 'badge bg-red-600/70 text-base-content',
+        high: 'badge bg-amber-600/60 text-base-content',
+        medium: 'badge bg-amber-400/60 text-base-content',
+        low: 'badge bg-amber-400/30 text-base-content',
     };
 
     // Array of filtered incidents
@@ -54,11 +77,10 @@ const IncidentList = () => {
         : incidents.filter(inc => inc.severity === filter)
 
     return (
-        <div className='rounded-xl backdrop-blur-md px-3'>
-            <h2 className='text-2xl text-center font-semibold p-1'>Incident list</h2>
-            {/* key= forces to show the current value, onChange= when user picks something, state needs to be updated (setSevFilter), this causes rerender, which updates the dropdown to match */}
+        <div className='flex flex-col px-3 pt-3 justify-center'>
+            <span className='text-2xl text-center font-semibold'>Incident list</span>
             <div className='flex justify-end items-center'>
-                <p className='text-xs text-base-content/50 mr-1 w-12 mb-1'>Filter by severity</p>
+                <p className='text-xs text-base-content/50 mr-1 w-12 mb-2'>Filter by severity</p>
                 <select value={filter} onChange={(e) => setFilter(e.target.value)} className='select select-sm w-23 text-base-content rounded-md mb-1'>
                     <option value="all">All</option>
                     <option value="critical">Critical</option>
@@ -67,15 +89,16 @@ const IncidentList = () => {
                     <option value="low">Low</option>
                 </select>
             </div>
-            <div className='overflow-x-auto rounded-md bg-base-200 h-[calc(100vh-14vh)]'>
-                <table className='table table-md table-pin-rows table-pin-cols'>
+            <div className='rounded-md bg-base-200 overflow-auto lg:h-[89.5vh] h-[84.5vh]'>
+                <table className='table table-md table-pin-rows table-pin-cols min-w-full'>
                     <thead>
                         <tr>
                             <th>ID</th>
                             <th>Title</th>
-                            <th>Severity</th>
+                            <th className='lg:flex lg:justify-center-safe'>Severity</th>
                             <th>Service</th>
                             <th>Status</th>
+                            <th></th>
                         </tr>
                     </thead>
                     <tbody>
@@ -83,17 +106,42 @@ const IncidentList = () => {
                             <tr key={incident.id}>
                                 <td>{incident.id}</td>
                                 <td>{incident.title}</td>
-                                <td className={severityColor[incident.severity]}>{incident.severity}</td>
+                                <td className='lg:flex lg:justify-center-safe'>
+                                    <div className={severityColor[incident.severity]}>
+                                        <span>{incident.severity}</span>
+                                    </div>
+                                </td>
                                 <td>{incident.service_name}</td>
                                 <td>{incident.resolved_at ? 'Resolved' : 'Pending'}</td>
+                                <td>
+                                    <OneButtonModal buttonText={
+                                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="size-4">
+                                            <path strokeLinecap="round" strokeLinejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0" />
+                                        </svg>
+                                    } title={
+                                        <>
+                                            <span>Are you sure you want to delete </span>
+                                            <span className='bg-linear-to-r from-violet-600 to-blue-500 text-transparent bg-clip-text'>{incident.id}</span>
+                                            <span> ?</span>
+                                        </>
+                                    } description={
+                                        <>
+                                            This action is irreversible.
+                                            <br/>
+                                            Incident will be removed forever after its deleted!
+                                        </>
+                                        } closeButtonText={
+                                            <>
+                                                <button className='btn btn-sm btn-error absolute bottom-4 right-4' onClick={() => deleteIncident(incident.id)}>Delete</button>
+                                            </>
+                                        } />
+                                </td>
                             </tr>
                         ))}
                     </tbody>
                 </table>
             </div>
-            <div className='flex text-xs text-base-content/60 justify-center items-center m-1'>
-                <p>Showing {filteredIncidents.length} of {incidents.length}</p>
-            </div>
+            <span className='text-xs text-base-content/60 text-center'>Showing {filteredIncidents.length} of {incidents.length}</span>
         </div> 
     )
 }
