@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import HealthStatus from './components/HealthResponse'
-import IncidentList from './components/IncidentList';
+import { IncidentListProvider, IncidentListCenter, IncidentListSidebar} from './components/IncidentList';
 import IncidentAdd from './components/IncidentAdd';
-import { IncidentReportProvider, IncidentReportCenter, IncidentReportSidebar } from './components/IncidentReport';
+import { IncidentReportProvider, IncidentReportCenter } from './components/IncidentReport';
 import EnableMenu from './components/EnableMenu';
 import HomePage from './components/HomePage';
 
@@ -18,12 +18,16 @@ const App = () => {
             </div>
             {/* Center */}
             { selectedMenu === 'Home' && <HomePage />}
-            { selectedMenu === 'Incidents' && <IncidentList />}
+            { selectedMenu === 'Incidents' && 
+                <IncidentListProvider>
+                    <IncidentListCenter />
+                    <IncidentListSidebar />
+                </IncidentListProvider>}
             { selectedMenu === 'Add' && <IncidentAdd />}
             { selectedMenu === 'Report' &&
                 <IncidentReportProvider>
                     <IncidentReportCenter />
-                    <IncidentReportSidebar />
+                    {/* <IncidentReportSidebar /> */}
                 </IncidentReportProvider>}
         </div>
     )
