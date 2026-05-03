@@ -1,22 +1,34 @@
-import {useState, useEffect } from 'react'
-import { OneButtonModal } from './Modal'
+import {useState, useEffect, createContext, useContext, type SetStateAction } from 'react'
+import SortableTable from './SortableTable'
+import { IncidentReportProvider, IncidentReportSidebar } from './IncidentReport'
+import type { Incident } from './types'
 
-interface Incident {
-    id: string
-    title: string
-    severity: string
-    service_name: string
-    started_at: string
-    resolved_at: string | null
+interface IncidentContextType {
+    incidents: Incident[]
+    setIncidents: React.Dispatch<SetStateAction<Incident[]>>
+    currentIncCount: number | null
+    setCurrentIncCount: React.Dispatch<SetStateAction<number | null>>
+    filter: string | null
+    setFilter: React.Dispatch<SetStateAction<string | null>>
+    resolvedFilter: "all" | "unresolved"
+    setResolvedFilter: React.Dispatch<SetStateAction<"all" | "unresolved">>
+    loading: boolean
+    error: string | null
+    setError: React.Dispatch<SetStateAction<string | null>>
 }
 
-const IncidentList = () => {
+const IncidentListContext = createContext<IncidentContextType | undefined>(undefined)
+
+export const IncidentListProvider = ({ children }: { children: React.ReactNode }) => {
     const [incidents, setIncidents] = useState<Incident[]>([])
     const [loading, setLoading] = useState<boolean>(true)
     const [error, setError] = useState<string | null>(null)
-    // Variable for severity dropdown menu
-    const [filter, setFilter] = useState<string>("all")
+    // Severity dropdown
+    const [filter, setFilter] = useState<string | null>(null)
+    const [resolvedFilter, setResolvedFilter] = useState<"all" | "unresolved">('all')
+    const [currentIncCount, setCurrentIncCount] = useState<number | null>(null)
 
+    
     useEffect(() => {
         const fetchIncidents = async () => {
             try {
@@ -35,18 +47,26 @@ const IncidentList = () => {
         fetchIncidents()
     }, [])
     
-    const deleteIncident = async (incidentID: string) => {
-        try {
-            const response = await fetch(`http://localhost:8080/incidents/${incidentID}`, {method: "DELETE"})
-            if (!response.ok) {
-                throw new Error(`HTTP ${response.status}`)
-            }
-            setIncidents(incidents.filter(inc => inc.id !== incidentID))
-        } catch (err) {
-            setError(err instanceof Error ? err.message : "Unknown error")
-        }
-    }
+    return (
+        <IncidentListContext.Provider value={{ incidents, currentIncCount, setCurrentIncCount, setIncidents, filter, setFilter, resolvedFilter, setResolvedFilter, loading, error, setError }}>
+            {children}
+        </IncidentListContext.Provider>
+    )
+}
 
+const useIncidentList = () => {
+    const context = useContext(IncidentListContext)
+    if (!context) {
+        throw new Error("useIncidentList must be within IncidentListProvider")
+    }
+    return context
+}
+
+export const IncidentListCenter = () => {
+    const { incidents, setIncidents, setCurrentIncCount, filter, resolvedFilter, loading, error, setError } = useIncidentList()
+    const [searchBg, setSearchBg] = useState<string>('')
+    const [searchKeyword, setSearchKeyword] = useState<string>('')
+    
     if (loading) {
         return (
             <div className="flex w-52 justify-center items-center flex-col gap-4">
@@ -62,86 +82,107 @@ const IncidentList = () => {
         return <p className='text-red-600'>Error: {error}</p>
     }
 
+    if (!incidents) {
+        return (
+            <span>List of incidents is empty</span>
+        )
+    }
+
     const severityColor: Record<string, string> = {
-        critical: 'badge bg-red-600/70 text-base-content',
-        high: 'badge bg-amber-600/60 text-base-content',
-        medium: 'badge bg-amber-400/60 text-base-content',
-        low: 'badge bg-amber-400/30 text-base-content',
+        critical: 'badge border-none bg-red-300 text-[#ba1c09] font-bold',
+        high: 'badge border-none bg-[#ffb954] text-[#966825] font-bold',
+        medium: 'badge border-none bg-[#FFCE47] text-[#966825] font-bold',
+        low: 'badge border-none bg-[#E8DB27] text-[#988F12] font-bold',
     };
 
-    // Array of filtered incidents
-    const filteredIncidents = filter === "all"
-        ? incidents
-        : incidents.filter(inc => inc.severity === filter)
+    const columns = [
+        { key: 'id', label: 'ID'},
+        { key: 'title', label: 'Title'},
+        { key: 'severity', label: 'Severity', 
+            render: (value: string) => <span className={severityColor[value]}>{value}</span>},
+        { key: 'service_name', label: 'Service name'},
+        // { key: 'started_at', label: 'Started at'},
+        // { key: 'resolved_at', label: 'Resolved at'},
+        { key: 'message', label: 'Message'},
+        { key: 'is_resolved', label: 'Is resolved'},
+        // delete button...
+        { key: 'delete', label: ''}
+    ]
 
     return (
-        <div className='flex flex-col px-3 pt-3 justify-center grow rounded-xl h-[97vh] m-4 bg-base-300'>
-            <span className='text-2xl text-center font-semibold'>Incident list</span>
-            <div className='flex justify-end items-center'>
-                <p className='text-xs text-base-content/50 mr-1 w-12 mb-2'>Filter by severity</p>
-                <select value={filter} onChange={(e) => setFilter(e.target.value)} className='select select-sm w-23 text-base-content rounded-xl mb-1'>
-                    <option value="all">All</option>
-                    <option value="critical">Critical</option>
-                    <option value="high">High</option>
-                    <option value="medium">Medium</option>
-                    <option value="low">Low</option>
-                </select>
+        <div className='flex flex-col px-3 pt-3 grow rounded-xl h-[97vh] m-4 bg-base-300 shadow'>
+            <span className='flex text-3xl font-bold justify-center mb-4 bg-linear-to-r from bg-orange-500 to-yellow-500 bg-clip-text text-transparent'>Incident list</span>
+            <div className='flex justify-end my-2'>
+                <label className={`input rounded-2xl w-60 border-base-content/50 ${searchBg}`} onMouseEnter={() => setSearchBg('bg-base-200')} onMouseLeave={() => setSearchBg('')}>
+                    <svg className="h-[1em] opacity-50" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><g strokeLinejoin="round" strokeLinecap="round" strokeWidth="2.5" fill="none" stroke="currentColor"><circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.3-4.3"></path></g></svg>
+                    <input type="search" placeholder="Search incidents" value={searchKeyword} onChange={(e) => setSearchKeyword(e.currentTarget.value)} />
+                </label>
             </div>
-            <div className='rounded-xl bg-base-200 overflow-auto lg:h-[89.5vh] h-[84.5vh]'>
-                <table className='table table-md table-pin-rows table-pin-cols min-w-full'>
-                    <thead>
-                        <tr>
-                            <th>ID</th>
-                            <th>Title</th>
-                            <th className='lg:flex lg:justify-center-safe'>Severity</th>
-                            <th>Service</th>
-                            <th>Status</th>
-                            <th></th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {filteredIncidents.map(incident => (
-                            <tr key={incident.id}>
-                                <td>{incident.id}</td>
-                                <td>{incident.title}</td>
-                                <td className='lg:flex lg:justify-center-safe'>
-                                    <div className={severityColor[incident.severity]}>
-                                        <span>{incident.severity}</span>
-                                    </div>
-                                </td>
-                                <td>{incident.service_name}</td>
-                                <td>{incident.resolved_at ? 'Resolved' : 'Pending'}</td>
-                                <td>
-                                    <OneButtonModal buttonText={
-                                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="size-4">
-                                            <path strokeLinecap="round" strokeLinejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0" />
-                                        </svg>
-                                    } title={
-                                        <>
-                                            <span>Are you sure you want to delete </span>
-                                            <span className='bg-linear-to-r from-violet-600 to-blue-500 text-transparent bg-clip-text'>{incident.id}</span>
-                                            <span> ?</span>
-                                        </>
-                                    } description={
-                                        <>
-                                            This action is irreversible.
-                                            <br/>
-                                            Incident will be removed forever after its deleted!
-                                        </>
-                                        } closeButtonText={
-                                            <>
-                                                <button className='btn btn-sm btn-error absolute bottom-4 right-4' onClick={() => deleteIncident(incident.id)}>Delete</button>
-                                            </>
-                                        } />
-                                </td>
-                            </tr>
-                        ))}
-                    </tbody>
-                </table>
+            <div className='rounded-box border border-base-content/50 m-1 mb-4 overflow-auto'>
+                <SortableTable columns={columns} data={incidents} onDelete={setIncidents} onError={setError} filter={filter} resolvedFilter={resolvedFilter} setCurrentIncCount={setCurrentIncCount} searchKeyword={searchKeyword}/>
             </div>
-            <span className='text-xs text-base-content/60 text-center'>Showing {filteredIncidents.length} of {incidents.length}</span>
         </div> 
     )
 }
 
-export default IncidentList
+export const IncidentListSidebar = () => {
+    const { incidents, currentIncCount, setFilter, setResolvedFilter, loading } = useIncidentList()
+
+    if (loading) {
+        return (
+            <div className="flex w-30 justify-center items-center flex-col gap-4">
+                <div className="skeleton h-4 w-full"></div>
+                <div className="skeleton h-4 w-20"></div>
+                <div className="skeleton h-4 w-full"></div>
+                <div className="skeleton h-4 w-14"></div>
+            </div>
+        )
+    }
+
+    const severityFilterClasses = "btn btn-xs btn-neutral border-base-content m-0.5 px-5.5"
+
+    return (
+        <div className='flex flex-col bg-base-300 rounded-xl my-4 ml-2 mr-4 h-[97vh] w-60 items-center shadow'>
+            <div className='flex flex-col'>
+                <div className="flex flex-col stats stats-vertical bg-base-200 m-4 shadow">
+                    <div className="stat">
+                        <div className="stat-title">Incident Count</div>
+                        {/* Todo: maybe handle state when the report is unresolved - or its already handled by the error and loading?? */}
+                        <div className="stat-value">{currentIncCount}/{incidents?.length}</div>
+                        <div className="stat-desc">Current count out of all</div>
+                    </div>
+                    <IncidentReportProvider>
+                        <IncidentReportSidebar />
+                    </IncidentReportProvider>
+                </div>
+                <div className='flex flex-col rounded-xl shadow mx-4 bg-base-200'>
+                    <span className='text-xl font-bold text-center mt-2'>Filters</span>
+                    <div className='flex flex-col mx-4 my-2 items-center'>
+                        <span>Severity</span>
+                        <div className='flex flex-col'>
+                            <input className={`checked:bg-green-200 checked:text-[#41ba09] ${severityFilterClasses}`} type="radio" name="frameworks" aria-label="All" value="all" onClick={() => setFilter(null)} defaultChecked/>
+                            <div className='flex'>
+                                <input className={`checked:bg-red-300 checked:text-[#ba1c09] ${severityFilterClasses}`} type="radio" name="frameworks" aria-label="Critical" value='critical' onClick={(e) => setFilter(e.currentTarget.value)}/>
+                                <input className={`checked:bg-[#ffb954] checked:text-[#966825] ${severityFilterClasses}`} type="radio" name="frameworks" aria-label="High" value='high' onClick={(e) => setFilter(e.currentTarget.value)}/>
+                            </div>
+                            <div className='flex'>
+                                <input className={`checked:bg-[#FFCE47] checked:text-[#966825] ${severityFilterClasses}`} type="radio" name="frameworks" aria-label="Medium" value='medium' onClick={(e) => setFilter(e.currentTarget.value)}/>
+                                <input className={`checked:bg-[#E8DB27] checked:text-[#988F12] ${severityFilterClasses}`} type="radio" name="frameworks" aria-label="Low" value='low' onClick={(e) => setFilter(e.currentTarget.value)}/>
+                            </div>
+                        </div>
+                    </div>
+                    <div className='text-center mb-4'>
+                        <span>Is resolved</span>
+                        <div className='items-center'>
+                            <label className="swap">
+                                <input type="checkbox"/>
+                                <span className="bg-green-200 text-[#41ba09] rounded-xl text-sm px-2 swap-off" onClick={() => setResolvedFilter("all")} defaultChecked>All</span>
+                                <span className="bg-[#FFCE47] text-[#966825] rounded-xl text-sm px-2 swap-on" onClick={() => setResolvedFilter("unresolved")}>Unresolved</span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    )
+}
