@@ -48,7 +48,9 @@ const IncidentAdd = () => {
                 body: JSON.stringify({id: id, title: title, severity: severity, service_name: serviceName, started_at: finalStartedAt, resolved_at: finalResolvedAt})
             })
             if (!response.ok) {
-                throw new Error(`HTTP ${response.status}`)
+                const errorData = await response.json()
+                console.log('Error response', errorData)
+                throw new Error(`- ${errorData.error}`)
             }
             setIsSuccess(true)
         } catch (err) {
