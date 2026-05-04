@@ -172,7 +172,7 @@ export const IncidentListSidebar = () => {
                         </div>
                     </div>
                     <div className='text-center mb-4'>
-                        <span>Is resolved</span>
+                        <span>Show incidents</span>
                         <div className='items-center'>
                             <label className="swap">
                                 <input type="checkbox"/>
