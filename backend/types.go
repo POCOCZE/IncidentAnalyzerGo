@@ -43,6 +43,7 @@ type IncidentStorage interface {
 	GetAll() ([]Incident, error)
 	GetByID(id string) (Incident, error)
 	Add(incident Incident) error
+	AddList(incidents []Incident) error
 	DeleteByID(id string) error
 	DeleteAll() error
 }

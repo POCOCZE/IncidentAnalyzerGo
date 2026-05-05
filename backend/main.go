@@ -78,7 +78,7 @@ func main() {
         incidents, _ := store.GetAll()
         report, err := BuildReport(incidents)
         if err != nil {
-            fmt.Printf("ERR: %s", err)
+            fmt.Printf("%s", err)
         }
         printReport(*output, report)
     }

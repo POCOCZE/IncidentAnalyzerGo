@@ -44,7 +44,7 @@ const HealthStatus = () => {
     }
 
     return (
-        <div className="flex items-center bg-base-200 rounded-xl p-1">
+        <div className="flex items-center bg-base-200 rounded-xl p-1 shadow">
             <div aria-label="success" className="status status-success animate-none"></div>
             <span className="text-xs text-base-content pl-1">Status</span>
         </div>

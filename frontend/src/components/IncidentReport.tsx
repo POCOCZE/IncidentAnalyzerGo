@@ -138,16 +138,38 @@ export const IncidentReportSidebar = () => {
         )
     }
 
+    const handleMTTR = () => {
+        if (report?.mttr === undefined) {
+            return (
+                <div className="stat-value">NaN</div>
+            )
+        }
+        return (
+            <div className="stat-value">{report?.mttr}</div>
+        )
+    }
+
+    const handleTotalUnresolved = () => {
+        if (report?.unresolved_ids === undefined) {
+            return (
+                <div className="stat-value">NaN</div>
+            )
+        }
+        return (
+            <div className="stat-value">{report?.unresolved_ids?.length}</div>
+        )
+    }
+
     return (
         <>
             <div className="stat">
                 <div className="stat-title">MTTR</div>
-                <div className="stat-value">{report?.mttr}</div>
+                {handleMTTR()}
                 <div className="stat-desc">Mean time to average</div>
             </div>
             <div className="stat">
-                <div className="stat-title">Total Unresolved</div>
-                <div className="stat-value">{report?.unresolved_ids.length}</div>
+                <div className="stat-title">Total Unresolved</div>    
+                {handleTotalUnresolved()}
             </div>
         </>
     )

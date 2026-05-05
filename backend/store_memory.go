@@ -48,6 +48,16 @@ func (m *MemoryStore) Add(incident Incident) error {
 	return nil
 }
 
+func (m *MemoryStore) AddList(incidents []Incident) error {
+	for _, incident := range incidents {
+		err := m.Add(incident)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 func (m *MemoryStore) GetAll() ([]Incident, error) {
 	incidents := m.Incidents
 	incidentsWide, err := IncidentsWide(incidents)

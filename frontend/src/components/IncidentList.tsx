@@ -82,17 +82,21 @@ export const IncidentListCenter = () => {
         return <p className='text-red-600'>Error: {error}</p>
     }
 
-    if (!incidents) {
-        return (
-            <span>List of incidents is empty</span>
-        )
+    const emptyIncidentsGuard = () => {
+        if (!incidents) {
+            return (
+                <div className='flex justify-center bg-base-100'>
+                    <span className='text-sm font-bold text-error/80 m-3'>Table is empty</span>
+                </div>
+            )
+        }
     }
 
     const severityColor: Record<string, string> = {
-        critical: 'badge border-none bg-red-300 text-[#ba1c09] font-bold',
-        high: 'badge border-none bg-[#ffb954] text-[#966825] font-bold',
-        medium: 'badge border-none bg-[#FFCE47] text-[#966825] font-bold',
-        low: 'badge border-none bg-[#E8DB27] text-[#988F12] font-bold',
+        critical: 'badge border-base-content bg-red-300 text-[#ba1c09] font-semibold',
+        high: 'badge border-base-content bg-[#ffb954] text-[#966825] font-semibold',
+        medium: 'badge border-base-content bg-[#FFCE47] text-[#966825] font-semibold',
+        low: 'badge border-base-content bg-[#E8DB27] text-[#988F12] font-semibold',
     };
 
     const columns = [
@@ -119,7 +123,9 @@ export const IncidentListCenter = () => {
                 </label>
             </div>
             <div className='rounded-box border border-base-content/50 m-1 mb-4 overflow-auto'>
+                {incidents ?
                 <SortableTable columns={columns} data={incidents} onDelete={setIncidents} onError={setError} filter={filter} resolvedFilter={resolvedFilter} setCurrentIncCount={setCurrentIncCount} searchKeyword={searchKeyword}/>
+                : emptyIncidentsGuard()}
             </div>
         </div> 
     )
@@ -141,14 +147,24 @@ export const IncidentListSidebar = () => {
 
     const severityFilterClasses = "btn btn-xs btn-neutral border-base-content m-0.5 px-5.5"
 
+    const handleIncidentCount = () => {
+        if (currentIncCount === null) {
+            return (
+                <div className="stat-value">NaN</div>
+            )
+        }
+        return (
+            <div className="stat-value">{currentIncCount}/{incidents?.length}</div>
+        )
+    }
+
     return (
         <div className='flex flex-col bg-base-300 rounded-xl my-4 ml-2 mr-4 h-[97vh] w-60 items-center shadow'>
             <div className='flex flex-col'>
                 <div className="flex flex-col stats stats-vertical bg-base-200 m-4 shadow">
                     <div className="stat">
                         <div className="stat-title">Incident Count</div>
-                        {/* Todo: maybe handle state when the report is unresolved - or its already handled by the error and loading?? */}
-                        <div className="stat-value">{currentIncCount}/{incidents?.length}</div>
+                        {handleIncidentCount()}
                         <div className="stat-desc">Current count out of all</div>
                     </div>
                     <IncidentReportProvider>

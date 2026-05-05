@@ -82,6 +82,14 @@ const SortableTable = ({columns, data, onDelete, onError, filter, resolvedFilter
         if (a[sortKey] > b[sortKey]) return sortDirection === 'asc' ? 1 : -1
         return 0
     })
+    
+    if (sortedData.length === 0) {
+        return (
+            <div className='flex justify-center bg-base-100'>
+                <span className='text-sm font-bold text-error/80 m-3'>Table is empty</span>
+            </div>
+        )
+    }
 
     const deleteIncident = async (incidentID: string) => {
         try {

@@ -21,6 +21,7 @@ const IncidentAdd = () => {
     const [serviceName, setServiceName] = useState<string>('')
     const [startedAt, setStartedAt] = useState<string>('')
     const [resolvedAt, setResolvedAt] = useState<string>('')
+    const [incidentsFile, setIncidentsFile] = useState<File | null>(null)
 
     const calcTimeZoneOffset = async ():Promise<string> => {
         const formatter = new Intl.DateTimeFormat('en-US', {
@@ -42,15 +43,32 @@ const IncidentAdd = () => {
             // Reset variables before trying again
             setIsSuccess(false)
             setError(null)
-            const response = await fetch(`http://localhost:8080/incidents`, {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({id: id, title: title, severity: severity, service_name: serviceName, started_at: finalStartedAt, resolved_at: finalResolvedAt})
-            })
-            if (!response.ok) {
-                const errorData = await response.json()
-                console.log('Error response', errorData)
-                throw new Error(`- ${errorData.error}`)
+
+            // If user did not imported list of incidents, add one incident
+            if (incidentsFile === null) {
+                const response = await fetch(`http://localhost:8080/incident`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({id: id, title: title, severity: severity, service_name: serviceName, started_at: finalStartedAt, resolved_at: finalResolvedAt})
+                })
+                if (!response?.ok) {
+                    const errorData = await response?.json()
+                    console.log('Error response', errorData)
+                    throw new Error(`- ${errorData.error}`)
+                }
+            } else {
+                const contents = await incidentsFile.text()
+                console.log(contents)
+                const response = await fetch(`http://localhost:8080/incidents`, {
+                    method: 'POST',
+                    headers: {"Content-Type": "application/json"},
+                    body: contents
+                })
+                if (!response?.ok) {
+                    const errorData = await response?.json()
+                    console.log('Error response', errorData)
+                    throw new Error(`- ${errorData.error}`)
+                }
             }
             setIsSuccess(true)
         } catch (err) {
@@ -107,8 +125,12 @@ const IncidentAdd = () => {
                     </div>
                 </div>
                 <div className="flex flex-col items-center">
-                    <span className="text-gray-600"><span className="badge badge-soft badge-xs mr-0.5">Coming Soon!</span>Import multiple incidents from existing file:</span>
-                    <input type="file" placeholder="You can't touch this" className="file-input" disabled />
+                    {/* Todo: Set maximum file size for the file */} 
+                    <span className="text-gray-600">Import incidents from file:</span>
+                    <input type="file" placeholder="You can't touch this" className="file-input" onChange={(e) => {
+                        const file = e.currentTarget.files?.[0] ?? null
+                        setIncidentsFile(file)
+                    }} />
                     <button onClick={postIncident} className="btn btn-neutral bg-base-100 border-base-content/15 active:bg-success active:text-base-content mt-6 lg:w-40">Submit</button>
                 </div>
             </fieldset>

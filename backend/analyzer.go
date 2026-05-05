@@ -84,7 +84,7 @@ func (r *IncidentReport) calcMTTRSec(durations map[string]IncidentDuration) erro
 
     // Calculate average across only resolved ones
     if len(durations) == 0 {
-        return fmt.Errorf("cannot devide by zero due to missing incidents")
+        return fmt.Errorf("WARN: cannot devide by zero due to missing incidents")
     }
     resolvedIncidentCount := r.IncidentsCount - len(r.UnresolvedIDs)
     avgSeconds := int(sum / float64(resolvedIncidentCount))
