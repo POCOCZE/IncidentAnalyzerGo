@@ -10,8 +10,8 @@ interface IncidentContextType {
     setCurrentIncCount: React.Dispatch<SetStateAction<number | null>>
     filter: string | null
     setFilter: React.Dispatch<SetStateAction<string | null>>
-    resolvedFilter: "all" | "unresolved"
-    setResolvedFilter: React.Dispatch<SetStateAction<"all" | "unresolved">>
+    resolvedFilter: string | null
+    setResolvedFilter: React.Dispatch<SetStateAction<string | null>>
     loading: boolean
     error: string | null
     setError: React.Dispatch<SetStateAction<string | null>>
@@ -25,7 +25,7 @@ export const IncidentListProvider = ({ children }: { children: React.ReactNode }
     const [error, setError] = useState<string | null>(null)
     // Severity dropdown
     const [filter, setFilter] = useState<string | null>(null)
-    const [resolvedFilter, setResolvedFilter] = useState<"all" | "unresolved">('all')
+    const [resolvedFilter, setResolvedFilter] = useState<string | null>(null)
     const [currentIncCount, setCurrentIncCount] = useState<number | null>(null)
 
     
@@ -46,7 +46,7 @@ export const IncidentListProvider = ({ children }: { children: React.ReactNode }
         }
         fetchIncidents()
     }, [])
-    
+
     return (
         <IncidentListContext.Provider value={{ incidents, currentIncCount, setCurrentIncCount, setIncidents, filter, setFilter, resolvedFilter, setResolvedFilter, loading, error, setError }}>
             {children}
@@ -60,6 +60,33 @@ const useIncidentList = () => {
         throw new Error("useIncidentList must be within IncidentListProvider")
     }
     return context
+}
+
+export const ExportIncidents = () => {
+    const incidents = useIncidentList()
+    const wrapped = { incidents: incidents.incidents}
+
+    const prepareExport = () => {
+        const blob = new Blob([JSON.stringify(wrapped, null, 2)], { type: "application/json" } )
+        return URL.createObjectURL(blob)
+    }
+
+    return (
+        <div className="flex flex-col items-center m-2">
+            <span className="text font-semibold">Export incidents</span>
+            <button className="btn btn-sm btn-neutral border-base-content mt-4 m-0.5 px-5.5" onClick={() => {
+                const url = prepareExport()
+                const link = document.createElement('a')
+                const time = new Date()
+                link.href = url
+                link.download = `incidents-${time.toLocaleDateString()}-${time.toLocaleTimeString()}.json`
+                link.click()
+                URL.revokeObjectURL(url)
+            }}>
+                Export
+            </button>
+        </div>
+    )
 }
 
 export const IncidentListCenter = () => {
@@ -190,11 +217,8 @@ export const IncidentListSidebar = () => {
                     <div className='text-center mb-4'>
                         <span>Show incidents</span>
                         <div className='items-center'>
-                            <label className="swap">
-                                <input type="checkbox"/>
-                                <span className="bg-green-200 text-[#41ba09] rounded-xl text-sm px-2 swap-off" onClick={() => setResolvedFilter("all")} defaultChecked>All</span>
-                                <span className="bg-[#FFCE47] text-[#966825] rounded-xl text-sm px-2 swap-on" onClick={() => setResolvedFilter("unresolved")}>Unresolved</span>
-                            </label>
+                                <input type='radio' name='frameworks' aria-label='All' value='all' className={`checked:bg-green-200 checked:text-[#41ba09] # ${severityFilterClasses}`} onClick={(e) => setResolvedFilter(e.currentTarget.value)}/>
+                                <input type='radio' name='frameworks' aria-label='Unresolved' value='unresolved' className={`checked:bg-[#FFCE47] checked:text-[#966825] ${severityFilterClasses}`} onClick={(e) => setResolvedFilter(e.currentTarget.value)}/>
                         </div>
                     </div>
                 </div>

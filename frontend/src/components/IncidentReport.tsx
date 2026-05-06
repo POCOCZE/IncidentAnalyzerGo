@@ -60,10 +60,35 @@ const useIncidentReport = () => {
     return context
 }
 
+export const DownloadReport = () => {
+    const { report } = useIncidentReport()
+
+    const prepareExport = (): string => {
+        const blob = new Blob([JSON.stringify(report, null, 2)], { type: 'application/json' })
+        return URL.createObjectURL(blob)
+    }
+
+    return (
+        <div className="flex flex-col items-center m-2">
+            <span className="text font-semibold">Download report</span>
+            <button className="btn btn-sm btn-neutral border-base-content mt-4 m-0.5 px-5.5" onClick={() => {
+                const url = prepareExport()
+                const link = document.createElement('a')
+                const time = new Date()
+                link.href = url
+                link.download = `report-${time.toLocaleDateString()}-${time.toLocaleTimeString()}.json`
+                link.click()
+                URL.revokeObjectURL(url)
+            }}>
+                Download
+            </button>
+        </div>
+    )
+}
+
 export const IncidentReportCenter = () => {
-    // const [group, setGroup] = useState<string>('id')
     const { report, error, loading } = useIncidentReport()
-    
+
     if (error) {
         return <ToastNotification duration={10000} message={`Error ${error}`} toastLevel='alert-error' toastPos='toast-top toast-right'/>
     }
@@ -82,20 +107,6 @@ export const IncidentReportCenter = () => {
             <span>Report is empty</span>
         )
     }
-    
-    const prepareExport = (): string => {
-        const blob = new Blob([JSON.stringify(report, null, 2)], { type: 'application/json' })
-        return URL.createObjectURL(blob)
-    }
-
-    // const filterReport = (group: string) => {
-    //     switch (group) {
-    //         case 'id': return report?.by_id ?? {}
-    //         case 'severity': return report?.by_severity ?? {}
-    //         case 'services': return report?.by_services ?? {}
-    //         default : return report?.by_id
-    //     }
-    // }w
 
     return (
         <div className="flex flex-col items-center grow rounded-xl h-[97vh] m-4 bg-base-300">
@@ -105,19 +116,8 @@ export const IncidentReportCenter = () => {
                     <span className="text-xl font-semibold text-right mx-2">Preview</span>
                     <pre className="text-xs bg-black text-base-100 p-4 rounded-xl overflow-auto">{JSON.stringify(report, null, 2)}</pre>
                 </div>
-                <div className="flex flex-col items-center m-2">
-                    <span className="text font-semibold">Download report</span>
-                    <button className="btn btn-sm border-base-100" onClick={() => {
-                        const url = prepareExport()
-                        const link = document.createElement('a')
-                        const time = new Date()
-                        link.href = url
-                        link.download = `report-${time.toLocaleDateString()}-${time.toLocaleTimeString()}.json`
-                        link.click()
-                        URL.revokeObjectURL(url)
-                    }}>
-                        Download
-                    </button>
+                <div className="m-2">
+                    {DownloadReport()}
                 </div>
             </div>
         </div>
