@@ -14,7 +14,7 @@ interface SortableTableProps {
     onDelete: (value: Incident[]) => void
     onError: (value: string | null) => void
     filter: string | null
-    resolvedFilter: "all" | "unresolved"
+    resolvedFilter: string | null
     setCurrentIncCount: React.Dispatch<SetStateAction<number | null>>
     searchKeyword: string
 }
