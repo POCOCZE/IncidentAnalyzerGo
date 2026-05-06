@@ -40,7 +40,13 @@ func (p *PostgresStore) Add(incident Incident) error {
 }
 
 func(p *PostgresStore) AddList(incidents []Incident) error {
-	return fmt.Errorf("[Coming soon!] This feature is currently not implemented.")
+	for _, incident := range incidents {
+		err := p.Add(incident)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func (p *PostgresStore) GetAll() ([]Incident, error) {
