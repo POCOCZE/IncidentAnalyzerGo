@@ -1,86 +1,28 @@
-![go serve output](images/go-serve.png)
+<img src="images/incident-list.png" alt="incident-list" width="600"/>
 
 # Incident Log Analyzer
 
-## What it does
+This tool allows to quickly add or remove incidents, download incident report or see all incidents within sortable table with filters.
 
-- Reads a JSON file of incidents
-- Parses incidents into Go structs
-- Calculates MTTR (mean time to recovery)
-- Finds unresolved incidents
-- Groups incidents by severity and by service
-- Outputs a structured JSON report to stdout or a file (-output flag)
+## REST API endpoints reference
 
-## Go concepts learned and used
+| HTTP method | Endpoint name | Handler name | Note |
+| ----------- | ------------- | ------------ | ---- |
+| GET | /healthz | healthHandler | Backend status health |
+| GET | /report | getReportHandler | Return incident report |
+| GET | /incidents | getAllHandler | Return list of incidents |
+| POST | /incidents | addListHandler | Retrives list of incidents |
+| POST | /incident | addHandler | Retrives one incident |
+| GET | /incidents/{id} | getByIDHandler | Return one incident by ID |
+| DELETE | /incidents/{id} | deleteByIDHandler | Delete one incident by ID |
 
-1. Variables, types
-2. Slices, Maps and Structs
-3. Functions with multiple return values, including errors
-4. `flag` package for CLI arguments
-5. `encoding/json` — Marshal and Unmarshal
-6. `os.ReadFile` / `os.WriteFile`
-7. `time.Parse` and `time.Duration`
-8. `fmt.Println`, `fmt.Sprintf`, `log` package
-9. `go test` — writing your first test
-10. `net/http` package for exposing APIs
-11. `sync.RWMutex` for parallel read or one write lock
-12. Validator (ext. lib) that checks POST request struct
-13. `database/sql` with `pgx` for persistent data storage in PG database
+## Screenshots
 
-**This project does not use those concepts:** goroutines, channels
+<img src="images/homepage.png" alt="homepage" width="600"/>
+<img src="images/incident-add.png" alt="incident-add" width="600"/>
+<img src="images/incident-report.png" alt="incident-report" width="600"/>
 
-## Available parameters
-
-![go-help](images/go-help.png)
-
-## Running with `go run`
-
-To run Go code by compiling it and immidiately running it:
-
-```bash
-# incidents.json file is used as an example
-go run main.go -file incidents.json
-
-# Output to file is optional as stdout is default method that can be further parsed with JQ
-go run main.go -file incidents.json -output my-output.json
-```
-
-## Compiling Go code
-
-To compile Go code you can use this command:
-
-```bash
-go build main.go
-```
-
-Compilation is very quick, and file is by default called just `main`.
-
-### Running compiled Go code
-
-To run compiled Go code simply write the name of the program - by default it's `main`:
-
-```bash
-main -file incidents.json
-```
-
-However if program is located somewhere else:
-
-```bash
-/path/to/main -file incidents.json
-
-# or
-./another/path/to/main -file incidents.json
-```
-
-## Go test
-
-Tested one function `CalcMTTRAvg()`:
-
-![go-test-result](images/go-test.png)
-
-## Output example
-
-Here is example output that you can expect by running the Go program againgst example `incidents.json` file:
+## REST API `/report` endpoint example
 
 ```json
 {
@@ -230,6 +172,12 @@ Here is example output that you can expect by running the Go program againgst ex
   }
 }
 ```
+
+## Go test
+
+Tested one function `CalcMTTRAvg()`:
+
+![go-test-result](images/go-test.png)
 
 ## Issues & Contributing
 
