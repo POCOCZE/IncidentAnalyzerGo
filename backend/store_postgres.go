@@ -26,7 +26,8 @@ func NewPostgresStore(connString string) (*PostgresStore, error) {
 }
 
 func (p *PostgresStore) Add(incident Incident) error {
-	_, err := p.db.Exec(
+	var err error
+	_, err = p.db.Exec(
 		`INSERT INTO incidents (id, title, severity, service_name, started_at, resolved_at) VALUES ($1, $2, $3, $4, $5, $6)`,
 		incident.ID,
 		incident.Title,
@@ -35,8 +36,18 @@ func (p *PostgresStore) Add(incident Incident) error {
 		incident.StartedAt,
 		incident.ResolvedAt,
 	)
-
-	return err
+	if err != nil {
+		return err
+	}
+	incidents, err := p.GetAll()
+	if err != nil {
+		return err
+	}
+	_, err = BuildReport(incidents)
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 func(p *PostgresStore) AddList(incidents []Incident) error {
@@ -65,8 +76,12 @@ func (p *PostgresStore) GetAll() ([]Incident, error) {
 		}
 		incidents = append(incidents, inc)
 	}
+	incidentsWide, err := IncidentsWide(incidents)
+	if err != nil {
+		return nil, err
+	}
 
-	return incidents, rows.Err()
+	return incidentsWide, rows.Err()
 }
 
 func (p *PostgresStore) GetByID(id string) (Incident, error) {
@@ -87,6 +102,15 @@ func (p *PostgresStore) DeleteByID(id string) error {
 	rows, _ := result.RowsAffected()
 	if rows == 0 {
 		return fmt.Errorf("incident ID %q not found", id)
+	}
+
+	incidents, err := p.GetAll()
+	if err != nil {
+		return err
+	}
+	_, err = BuildReport(incidents)
+	if err != nil {
+		return err
 	}
 
 	return nil
