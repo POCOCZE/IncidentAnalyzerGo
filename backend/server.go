@@ -27,7 +27,7 @@ func getReportHandler(store IncidentStorage) http.HandlerFunc {
 		if err != nil {
 			w.WriteHeader(http.StatusBadRequest)
 			encodeJSON(w, map[string]string{"error": fmt.Sprintf("%s", err)}, "")
-			log.Printf("ERR: %s", err)
+			log.Printf("%s", err)
 		} else {
 			if severity != "" {
 				_, exist := report.BySeverity[severity]
@@ -82,6 +82,37 @@ func getAllHandler(store IncidentStorage) http.HandlerFunc{
 		} else {
 			w.WriteHeader(http.StatusOK)
 			encodeJSON(w, incidents, "")
+		}
+	}
+}
+
+func addListHandler(store IncidentStorage) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		var incidents IncidentsFile
+		err := json.NewDecoder(r.Body).Decode(&incidents)
+
+		w.Header().Set("Content-Type", "application/json")
+		if err != nil {
+			w.WriteHeader(http.StatusBadRequest)
+			encodeJSON(w, map[string]string{"error": fmt.Sprintf("%s", err)}, "")
+			log.Printf("ERR: %s", err)
+			return
+		}
+		// Guard that checks if user sent correct incidents body structure
+		if len(incidents.Incidents) == 0 {
+			w.WriteHeader(http.StatusBadRequest)
+			encodeJSON(w, map[string]string{"error": "no incidents provided. did you specified correct endpoint?"}, "")
+			log.Printf("ERR: User tried to write 0 incidents. Maybe he specificed bad endpoint.")
+		}
+		err = store.AddList(incidents.Incidents)
+		if err != nil {
+			w.WriteHeader(http.StatusBadRequest)
+			encodeJSON(w, map[string]string{"error": fmt.Sprintf("%s", err)}, "")
+			log.Printf("ERR: %s", err)
+			return
+		} else {
+			w.WriteHeader(http.StatusCreated)
+			log.Printf("INFO: Added list of %v incidents", len(incidents.Incidents))
 		}
 	}
 }
@@ -167,20 +198,36 @@ func deleteAllHandler(store IncidentStorage) http.HandlerFunc {
 	}
 }
 
+func corsMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, DELETE, OPTIONS")
+		w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+
+		if r.Method == "OPTIONS" {
+			w.WriteHeader(http.StatusOK)
+			return
+		}
+		next.ServeHTTP(w, r)
+	})
+}
+
 func startServer(port string, store IncidentStorage) {
-	http.HandleFunc("/healthz", healthHandler)
-	// ? This is not used because current implementation does not allow to use this now
-	http.HandleFunc("GET /report", getReportHandler(store))
-	http.HandleFunc("GET /incidents", getAllHandler(store))
-	http.HandleFunc("POST /incidents", addHandler(store))
-	http.HandleFunc("GET /incidents/{id}", getByIDHandler(store))
-	http.HandleFunc("DELETE /incidents/{id}", deleteByIDHandler(store))
+	mux := http.NewServeMux()
+	mux.HandleFunc("/healthz", healthHandler)
+	mux.HandleFunc("GET /report", getReportHandler(store))
+	mux.HandleFunc("GET /incidents", getAllHandler(store))
+	mux.HandleFunc("POST /incidents", addListHandler(store))
+	mux.HandleFunc("POST /incident", addHandler(store))
+	mux.HandleFunc("GET /incidents/{id}", getByIDHandler(store))
+	mux.HandleFunc("DELETE /incidents/{id}", deleteByIDHandler(store))
 
 	// !This removes all incidents forever! For testing.
-	http.HandleFunc("DELETE /delete-all-incidents-forever", deleteAllHandler(store))
+	mux.HandleFunc("DELETE /delete-all-incidents-forever", deleteAllHandler(store))
 
+	handler := corsMiddleware(mux)
 	log.Printf("INFO: Server listening on port :%s", port)
-	err := http.ListenAndServe(":"+port, nil)
+	err := http.ListenAndServe(":"+port, handler)
 	if err != nil {
 		log.Fatalf("Error starting HTTP server: %s", err)
 	}

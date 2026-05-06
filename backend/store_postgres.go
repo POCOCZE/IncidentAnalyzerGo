@@ -39,6 +39,10 @@ func (p *PostgresStore) Add(incident Incident) error {
 	return err
 }
 
+func(p *PostgresStore) AddList(incidents []Incident) error {
+	return fmt.Errorf("[Coming soon!] This feature is currently not implemented.")
+}
+
 func (p *PostgresStore) GetAll() ([]Incident, error) {
 	rows, err := p.db.Query(`SELECT id, title, severity, service_name, started_at, resolved_at FROM incidents`)
 	if err != nil {

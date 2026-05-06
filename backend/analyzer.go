@@ -5,7 +5,7 @@ import (
 	"time"
 )
 
-func (r *IncidentReport) incidentMessage(incident Incident, durations map[string]IncidentDuration) (string, bool) {
+func IncidentMessage(incident Incident, durations map[string]IncidentDuration) (string, bool) {
     // Handles message generation for GroupIncidentsBy... functions
     // For resolved incidents print how long it took in HMS format
     // Returns message string and boolean whether the incident is resolved
@@ -25,7 +25,7 @@ func (r *IncidentReport) groupIncidentsByService(incident Incident, durations ma
     // For each service name assign ServiceDetails struct value.
     // Service name keys are not sorted.
 
-    message, isResolved := r.incidentMessage(incident, durations)
+    message, isResolved := IncidentMessage(incident, durations)
 
     // Check whether serviceName keys exist, create them otherwise
     _, exists := r.ByServices[incident.Service]
@@ -51,7 +51,7 @@ func (r *IncidentReport) groupIncidentsBySeverity(incident Incident, durations m
         r.BySeverity[incident.Severity] = make(map[string]IncidentReportDetails)
     }
 
-    message, isResolved := r.incidentMessage(incident, durations)
+    message, isResolved := IncidentMessage(incident, durations)
     r.BySeverity[incident.Severity][incident.ID] = IncidentReportDetails{
         Title: incident.Title,
         Service: incident.Service,
@@ -61,7 +61,7 @@ func (r *IncidentReport) groupIncidentsBySeverity(incident Incident, durations m
 }
 
 func (r *IncidentReport) groupIncidentsByID(incident Incident, durations map[string]IncidentDuration) {
-    message, isResolved := r.incidentMessage(incident, durations)
+    message, isResolved := IncidentMessage(incident, durations)
     r.ByID[incident.ID] = IncidentReportDetails{
         Title: incident.Title,
         Severity: incident.Severity,
@@ -84,7 +84,7 @@ func (r *IncidentReport) calcMTTRSec(durations map[string]IncidentDuration) erro
 
     // Calculate average across only resolved ones
     if len(durations) == 0 {
-        return fmt.Errorf("cannot devide by zero due to missing incidents")
+        return fmt.Errorf("WARN: cannot devide by zero due to missing incidents")
     }
     resolvedIncidentCount := r.IncidentsCount - len(r.UnresolvedIDs)
     avgSeconds := int(sum / float64(resolvedIncidentCount))

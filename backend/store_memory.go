@@ -31,6 +31,16 @@ func (m *MemoryStore) Add(incident Incident) error {
 		return err
 	}
 
+	// Check if the key already exist, this will prevent some bugs and errors
+	for _, storedInc := range m.Incidents {
+		// If incident already exist in slice - return error
+		// ? Not sure whether there is more effective solution that could immidiately find the incident without relying on loops - I would need to switch to `map`, but this would result in incompatibilities...
+		// ? I will keep it as it as, since Go is very fast.
+		if storedInc.ID == incident.ID {
+			return fmt.Errorf("error: incident already exist")
+		}
+	}
+	
 	// Append incident and rebuild report
 	m.Incidents = append(m.Incidents, incident)
 	BuildReport(m.Incidents)
@@ -38,10 +48,24 @@ func (m *MemoryStore) Add(incident Incident) error {
 	return nil
 }
 
+func (m *MemoryStore) AddList(incidents []Incident) error {
+	for _, incident := range incidents {
+		err := m.Add(incident)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 func (m *MemoryStore) GetAll() ([]Incident, error) {
 	incidents := m.Incidents
+	incidentsWide, err := IncidentsWide(incidents)
+	if err != nil {
+		return nil, err
+	}
 
-	return incidents, nil
+	return incidentsWide, nil
 }
 
 func (m *MemoryStore) GetByID(id string) (Incident, error) {

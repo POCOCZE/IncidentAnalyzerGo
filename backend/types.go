@@ -9,6 +9,8 @@ type Incident struct {
 	Service    string `json:"service_name" validate:"required"`
 	StartedAt  *time.Time `json:"started_at" validate:"required"`
 	ResolvedAt *time.Time `json:"resolved_at"`
+	Message	   string `json:"message"`
+	IsResolved bool `json:"is_resolved"`
 }
 
 type IncidentsFile struct {
@@ -41,6 +43,7 @@ type IncidentStorage interface {
 	GetAll() ([]Incident, error)
 	GetByID(id string) (Incident, error)
 	Add(incident Incident) error
+	AddList(incidents []Incident) error
 	DeleteByID(id string) error
 	DeleteAll() error
 }
