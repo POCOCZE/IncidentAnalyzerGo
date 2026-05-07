@@ -120,34 +120,48 @@ export const IncidentListCenter = () => {
     }
 
     const severityColor: Record<string, string> = {
-        critical: 'badge border-base-content bg-red-300 text-[#ba1c09] font-semibold',
-        high: 'badge border-base-content bg-[#ffb954] text-[#966825] font-semibold',
-        medium: 'badge border-base-content bg-[#FFCE47] text-[#966825] font-semibold',
-        low: 'badge border-base-content bg-[#E8DB27] text-[#988F12] font-semibold',
+        critical: 'badge border-base-content bg-error/70 text-black font-semibold',
+        high: 'badge border-base-content bg-warning text-black font-semibold',
+        medium: 'badge border-base-content bg-warning/50 text-black font-semibold',
+        low: 'badge border-base-content bg-warning/20 text-black font-semibold',
     };
+
+    const severityLabel: Record<string, string> = {
+        critical: 'Critical',
+        high: 'High',
+        medium: 'Medium',
+        low: 'Low',
+    }
 
     const columns = [
         { key: 'id', label: 'ID'},
         { key: 'title', label: 'Title'},
-        { key: 'severity', label: 'Severity', 
-            render: (value: string) => <span className={severityColor[value]}>{value}</span>},
+        { key: 'severity', label: 'Severity',
+            render: (value: string) => <span className={severityColor[value]}>{severityLabel[value]}</span>},
         { key: 'service_name', label: 'Service name'},
         // { key: 'started_at', label: 'Started at'},
         // { key: 'resolved_at', label: 'Resolved at'},
         { key: 'message', label: 'Message'},
         { key: 'is_resolved', label: 'Is resolved'},
-        // delete button...
-        { key: 'delete', label: ''}
+        { key: 'delete', label: ''},
+        // Editting incidents - coming soon!
+        // { key: 'edit', label: 'Edit'},
     ]
+
+    const searchIncidentsField = () => {
+        return (
+            <label className={`input rounded-2xl w-60 border-base-content/50 ${searchBg}`} onMouseEnter={() => setSearchBg('bg-base-200')} onMouseLeave={() => setSearchBg('')}>
+                <svg className="h-[1em] opacity-50" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><g strokeLinejoin="round" strokeLinecap="round" strokeWidth="2.5" fill="none" stroke="currentColor"><circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.3-4.3"></path></g></svg>
+                <input type="search" placeholder="Search incidents" value={searchKeyword} onChange={(e) => setSearchKeyword(e.currentTarget.value)} />
+            </label>
+        )
+    }
 
     return (
         <div className='flex flex-col px-3 pt-3 grow rounded-xl h-[97vh] m-4 bg-base-300 shadow'>
-            <span className='flex text-3xl font-bold justify-center mb-4 bg-linear-to-r from bg-orange-500 to-yellow-500 bg-clip-text text-transparent'>Incident list</span>
-            <div className='flex justify-end my-2'>
-                <label className={`input rounded-2xl w-60 border-base-content/50 ${searchBg}`} onMouseEnter={() => setSearchBg('bg-base-200')} onMouseLeave={() => setSearchBg('')}>
-                    <svg className="h-[1em] opacity-50" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><g strokeLinejoin="round" strokeLinecap="round" strokeWidth="2.5" fill="none" stroke="currentColor"><circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.3-4.3"></path></g></svg>
-                    <input type="search" placeholder="Search incidents" value={searchKeyword} onChange={(e) => setSearchKeyword(e.currentTarget.value)} />
-                </label>
+            <span className='flex text-3xl font-bold justify-center bg-linear-to-r from bg-orange-500 to-yellow-500 bg-clip-text text-transparent'>Incident list</span>
+            <div className='flex justify-end m-1'>
+                {searchIncidentsField()}
             </div>
             <div className='rounded-box border border-base-content/50 m-1 mb-4 overflow-auto'>
                 {incidents ?
@@ -172,7 +186,9 @@ export const IncidentListSidebar = () => {
         )
     }
 
-    const severityFilterClasses = "btn btn-xs btn-neutral border-base-content m-0.5 px-5.5"
+    const severityFilterBtnClasses = "btn btn-xs btn-neutral border-base-content m-0.5 px-6"
+
+    const incFilterBtnClasses = "btn btn-xs btn-neutral border-base-content m-0.5 px-3"
 
     const handleIncidentCount = () => {
         if (currentIncCount === null) {
@@ -182,6 +198,40 @@ export const IncidentListSidebar = () => {
         }
         return (
             <div className="stat-value">{currentIncCount}/{incidents?.length}</div>
+        )
+    }
+
+    const severityFilter = () => {
+        return (
+            <div className='flex flex-col mx-4 my-2 items-center'>
+                <span className='text-sm font-semibold m-1'>Severity</span>
+                <div className='flex flex-col w-full'>
+                    <input className={`checked:bg-success checked:text-black ${severityFilterBtnClasses}`} type="radio" name="frameworks" aria-label="All" value="all" onClick={() => setFilter(null)} defaultChecked/>
+                    <div className='flex justify-center'>
+                        <input className={`checked:bg-error/70 checked:text-black ${severityFilterBtnClasses}`} type="radio" name="frameworks" aria-label="Critical" value='critical' onClick={(e) => setFilter(e.currentTarget.value)}/>
+                        <input className={`checked:bg-warning checked:text-black ${severityFilterBtnClasses}`} type="radio" name="frameworks" aria-label="High" value='high' onClick={(e) => setFilter(e.currentTarget.value)}/>
+                    </div>
+                    <div className='flex justify-center'>
+                        <input className={`checked:bg-warning/50 checked:text-black ${severityFilterBtnClasses}`} type="radio" name="frameworks" aria-label="Medium" value='medium' onClick={(e) => setFilter(e.currentTarget.value)}/>
+                        <input className={`checked:bg-warning/20 checked:text-black ${severityFilterBtnClasses}`} type="radio" name="frameworks" aria-label="Low" value='low' onClick={(e) => setFilter(e.currentTarget.value)}/>
+                    </div>
+                </div>
+            </div>
+        )
+    }
+
+    const showIncidentsFilter = () => {
+        return (
+            <div className='flex flex-col items-center mx-4 my-2'>
+                <span className='text-sm font-semibold m-1'>Show incidents</span>
+                <div className='flex flex-col w-full'>
+                    <input type='radio' name='frameworks2' aria-label='All' value='all' className={`checked:bg-success checked:text-black ${incFilterBtnClasses}`} onClick={(e) => setResolvedFilter(e.currentTarget.value)} defaultChecked/>
+                    <div className='flex'>
+                        <input type='radio' name='frameworks2' aria-label='Unresolved' value='unresolved' className={`checked:bg-warning checked:text-black ${incFilterBtnClasses}`} onClick={(e) => setResolvedFilter(e.currentTarget.value)}/>
+                        <input type='radio' name='frameworks2' aria-label='Resolved' value='resolved' className={`checked:bg-success checked:text-black ${incFilterBtnClasses}`} onClick={(e) => setResolvedFilter(e.currentTarget.value)}/>
+                    </div>
+                </div>
+            </div>
         )
     }
 
@@ -200,27 +250,8 @@ export const IncidentListSidebar = () => {
                 </div>
                 <div className='flex flex-col rounded-xl shadow mx-4 bg-base-200'>
                     <span className='text-xl font-bold text-center mt-2'>Filters</span>
-                    <div className='flex flex-col mx-4 my-2 items-center'>
-                        <span>Severity</span>
-                        <div className='flex flex-col'>
-                            <input className={`checked:bg-green-200 checked:text-[#41ba09] ${severityFilterClasses}`} type="radio" name="frameworks" aria-label="All" value="all" onClick={() => setFilter(null)} defaultChecked/>
-                            <div className='flex'>
-                                <input className={`checked:bg-red-300 checked:text-[#ba1c09] ${severityFilterClasses}`} type="radio" name="frameworks" aria-label="Critical" value='critical' onClick={(e) => setFilter(e.currentTarget.value)}/>
-                                <input className={`checked:bg-[#ffb954] checked:text-[#966825] ${severityFilterClasses}`} type="radio" name="frameworks" aria-label="High" value='high' onClick={(e) => setFilter(e.currentTarget.value)}/>
-                            </div>
-                            <div className='flex'>
-                                <input className={`checked:bg-[#FFCE47] checked:text-[#966825] ${severityFilterClasses}`} type="radio" name="frameworks" aria-label="Medium" value='medium' onClick={(e) => setFilter(e.currentTarget.value)}/>
-                                <input className={`checked:bg-[#E8DB27] checked:text-[#988F12] ${severityFilterClasses}`} type="radio" name="frameworks" aria-label="Low" value='low' onClick={(e) => setFilter(e.currentTarget.value)}/>
-                            </div>
-                        </div>
-                    </div>
-                    <div className='text-center mb-4'>
-                        <span>Show incidents</span>
-                        <div className='items-center'>
-                                <input type='radio' name='frameworks' aria-label='All' value='all' className={`checked:bg-green-200 checked:text-[#41ba09] # ${severityFilterClasses}`} onClick={(e) => setResolvedFilter(e.currentTarget.value)}/>
-                                <input type='radio' name='frameworks' aria-label='Unresolved' value='unresolved' className={`checked:bg-[#FFCE47] checked:text-[#966825] ${severityFilterClasses}`} onClick={(e) => setResolvedFilter(e.currentTarget.value)}/>
-                        </div>
-                    </div>
+                    {severityFilter()}
+                    {showIncidentsFilter()}
                 </div>
             </div>
         </div>
