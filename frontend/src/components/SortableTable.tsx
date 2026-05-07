@@ -35,16 +35,22 @@ const SortableTable = ({columns, data, onDelete, onError, filter, resolvedFilter
     }
 
     const filterResolvedIncidents = () => {
-        if (resolvedFilter === "all") {
-            return filterSearchKeyword()
-        } else {
+        if (resolvedFilter === 'unresolved') {
             return filterSearchKeyword().filter(inc => inc.is_resolved === false)
         }
+        if (resolvedFilter === 'resolved') {
+            return filterSearchKeyword().filter(inc => inc.is_resolved === true)
+        } else {
+            return filterSearchKeyword()
+        }
+        // if (resolvedFilter === null || resolvedFilter === 'all') {
+        //     return filterSearchKeyword()
+        // } 
     }
 
     // Array of filtered incidents
     const filteredIncidents = () => {
-        if (filter === null) {
+        if (filter === null || filter === 'all') {
             return filterResolvedIncidents()
         } else {
             return filterResolvedIncidents().filter(inc => inc.severity === filter)
