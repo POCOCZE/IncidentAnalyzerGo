@@ -30,8 +30,7 @@ func (m *MemoryStore) Add(incident core.Incident) error {
 	m.Mu.Lock()
 	defer m.Mu.Unlock()
 
-	var validate *validator.Validate
-	validate = validator.New(validator.WithRequiredStructEnabled())
+	var validate *validator.Validate = validator.New(validator.WithRequiredStructEnabled())
 	err := validate.Struct(incident)
 	if err != nil {
 		return err
@@ -47,11 +46,12 @@ func (m *MemoryStore) Add(incident core.Incident) error {
 		}
 	}
 	
+	// * This will be removed in the future
 	// Check if time is defined (resolvedAt can be null) and convert to UTC if needed
 	if core.IsValidTime(incident.StartedAt) {
 		incident.StartedAt = core.ConvertToUTC(incident.StartedAt)
 	} else {
-		return fmt.Errorf("StartedAt time is not valid!")
+		return fmt.Errorf("startedAt time is not valid")
 	}
 	if core.IsValidTime(incident.ResolvedAt) {
 		incident.ResolvedAt = core.ConvertToUTC(incident.ResolvedAt)
@@ -92,15 +92,16 @@ func (m *MemoryStore) Edit(id string, incident core.Incident) error {
 			// return error if user tries to change incident ID or startedAt (e.g. using a bug)
 			// Todo: changing startedAt is not yet implemented.
 			if inc.ID != incident.ID {
-				return fmt.Errorf("Chanding Incident ID is not allowed!")
+				return fmt.Errorf("chanding Incident ID is not allowed")
 			}
 			isFound = true
 
+			// * This will be removed in the future
 			// Check if time is defined (resolvedAt can be null) and convert to UTC if needed
 			if core.IsValidTime(incident.StartedAt) {
 				incident.StartedAt = core.ConvertToUTC(incident.StartedAt)
 			} else {
-				return fmt.Errorf("StartedAt time is not valid!")
+				return fmt.Errorf("startedAt time is not valid")
 			}
 			if core.IsValidTime(incident.ResolvedAt) {
 				incident.ResolvedAt = core.ConvertToUTC(incident.ResolvedAt)
@@ -118,7 +119,7 @@ func (m *MemoryStore) Edit(id string, incident core.Incident) error {
 			return err
 		}
 	} else {
-		return fmt.Errorf("Incident %q not found", id)
+		return fmt.Errorf("incident %q not found", id)
 	}
 
 	return nil
@@ -145,7 +146,7 @@ func (m *MemoryStore) GetByID(id string) (core.Incident, error) {
 		}
 	}
 
-	return core.Incident{}, fmt.Errorf("Incident ID %q not found", id)
+	return core.Incident{}, fmt.Errorf("incident ID %q not found", id)
 }
 
 func (m *MemoryStore) DeleteByID(id string) error {
@@ -164,9 +165,12 @@ func (m *MemoryStore) DeleteByID(id string) error {
 	if found {
 		// Set new incidents list and rebuild report
 		m.Incidents = newIncidents
-		core.BuildReport(m.Incidents)
+		_, err := core.BuildReport(m.Incidents)
+		if err != nil {
+			return err
+		}
 	} else {
-        err := fmt.Errorf("Incident ID %q was not found", id)
+        err := fmt.Errorf("incident ID %q was not found", id)
         return err
     }
 

@@ -18,7 +18,10 @@ func TestMTTRSec(t *testing.T) {
         "Incident2": {Seconds: 10, HMSFormat: "0m10s"},
     }
 
-    report.CalcMTTRSec(duration)
+    err := report.CalcMTTRSec(duration)
+    if err != nil {
+        t.Errorf("%s", err)
+    }
     got := report.MTTR
     // 20 / 2 = 10s as MTTR
     want := "10s"

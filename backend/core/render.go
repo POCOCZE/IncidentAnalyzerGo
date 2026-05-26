@@ -20,21 +20,27 @@ func serveJsonOutput(report *IncidentReport) []byte {
     return jsonData
 }
 
-func PrintReport(output string, report *IncidentReport) {
+func PrintReport(output string, report *IncidentReport) (err error) {
     if output == "stdout" {
         jsonData := serveJsonOutput(report)
         fmt.Println(string(jsonData))
     } else {
         file, err := os.Create(output)
         if err != nil {
-            log.Fatalf("Error creating output file: %s", err)
+            return fmt.Errorf("Error creating output file: %s", err)
         }
-        defer file.Close()
+        defer func() {
+            if closeErr := file.Close(); closeErr != nil {
+                err = closeErr
+            }
+        }()
 
         jsonData := serveJsonOutput(report)
         _, err = file.Write(jsonData)
         if err != nil {
-            log.Fatalf("Error writing report to output file: %s", err)
+            return fmt.Errorf("Error writing report to output file: %s", err)
         }
+        return err
     }
+    return nil
 }

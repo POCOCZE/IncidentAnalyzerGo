@@ -98,12 +98,16 @@ func(p *PostgresStore) Edit(id string, incident core.Incident) error {
 	return nil
 }
 
-func (p *PostgresStore) GetAll() ([]core.Incident, error) {
+func (p *PostgresStore) GetAll() (incidentsWide []core.Incident, err error) {
 	rows, err := p.db.Query(`SELECT id, title, severity, service_name, started_at, resolved_at FROM incidents`)
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer func() {
+		if closeErr := rows.Close(); closeErr != nil {
+			err = closeErr
+		}
+	}()
 
 	var incidents []core.Incident
 	for rows.Next() {
@@ -114,7 +118,7 @@ func (p *PostgresStore) GetAll() ([]core.Incident, error) {
 		}
 		incidents = append(incidents, inc)
 	}
-	incidentsWide, err := core.IncidentsWide(incidents)
+	incidentsWide, err = core.IncidentsWide(incidents)
 	if err != nil {
 		return nil, err
 	}
