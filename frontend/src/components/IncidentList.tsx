@@ -120,10 +120,10 @@ export const IncidentListCenter = () => {
     }
 
     const severityColor: Record<string, string> = {
-        critical: 'badge border-base-content bg-error/70 text-black font-semibold',
-        high: 'badge border-base-content bg-warning text-black font-semibold',
-        medium: 'badge border-base-content bg-warning/50 text-black font-semibold',
-        low: 'badge border-base-content bg-warning/20 text-black font-semibold',
+        critical: 'badge border-base-content bg-error/70 text-black dark:text-white font-semibold',
+        high: 'badge border-base-content bg-warning text-black dark:text-white font-semibold',
+        medium: 'badge border-base-content bg-warning/50 text-black dark:text-white font-semibold',
+        low: 'badge border-base-content bg-warning/20 text-black dark:text-white font-semibold',
     };
 
     const severityLabel: Record<string, string> = {
@@ -143,9 +143,8 @@ export const IncidentListCenter = () => {
         // { key: 'resolved_at', label: 'Resolved at'},
         { key: 'message', label: 'Message'},
         { key: 'is_resolved', label: 'Is resolved'},
+        { key: 'edit', label: ''},
         { key: 'delete', label: ''},
-        // Editting incidents - coming soon!
-        // { key: 'edit', label: 'Edit'},
     ]
 
     const searchIncidentsField = () => {
@@ -186,9 +185,9 @@ export const IncidentListSidebar = () => {
         )
     }
 
-    const severityFilterBtnClasses = "btn btn-xs btn-neutral border-base-content m-0.5 px-6"
+    const severityFilterBtnClasses = "btn btn-xs btn-neutral checked:text-black dark:checked:text-white border-base-content m-0.5 px-6"
 
-    const incFilterBtnClasses = "btn btn-xs btn-neutral border-base-content m-0.5 px-3"
+    const incFilterBtnClasses = "btn btn-xs btn-neutral checked:text-black dark:checked:text-white border-base-content m-0.5 px-3"
 
     const handleIncidentCount = () => {
         if (currentIncCount === null) {
@@ -206,14 +205,14 @@ export const IncidentListSidebar = () => {
             <div className='flex flex-col mx-4 my-2 items-center'>
                 <span className='text-sm font-semibold m-1'>Severity</span>
                 <div className='flex flex-col w-full'>
-                    <input className={`checked:bg-success checked:text-black ${severityFilterBtnClasses}`} type="radio" name="frameworks" aria-label="All" value="all" onClick={() => setFilter(null)} defaultChecked/>
+                    <input className={`checked:bg-success ${severityFilterBtnClasses}`} type="radio" name="frameworks" aria-label="All" value="all" onClick={() => setFilter(null)} defaultChecked/>
                     <div className='flex justify-center'>
-                        <input className={`checked:bg-error/70 checked:text-black ${severityFilterBtnClasses}`} type="radio" name="frameworks" aria-label="Critical" value='critical' onClick={(e) => setFilter(e.currentTarget.value)}/>
-                        <input className={`checked:bg-warning checked:text-black ${severityFilterBtnClasses}`} type="radio" name="frameworks" aria-label="High" value='high' onClick={(e) => setFilter(e.currentTarget.value)}/>
+                        <input className={`checked:bg-error/70 ${severityFilterBtnClasses}`} type="radio" name="frameworks" aria-label="Critical" value='critical' onClick={(e) => setFilter(e.currentTarget.value)}/>
+                        <input className={`checked:bg-warning ${severityFilterBtnClasses}`} type="radio" name="frameworks" aria-label="High" value='high' onClick={(e) => setFilter(e.currentTarget.value)}/>
                     </div>
                     <div className='flex justify-center'>
-                        <input className={`checked:bg-warning/50 checked:text-black ${severityFilterBtnClasses}`} type="radio" name="frameworks" aria-label="Medium" value='medium' onClick={(e) => setFilter(e.currentTarget.value)}/>
-                        <input className={`checked:bg-warning/20 checked:text-black ${severityFilterBtnClasses}`} type="radio" name="frameworks" aria-label="Low" value='low' onClick={(e) => setFilter(e.currentTarget.value)}/>
+                        <input className={`checked:bg-warning/50 ${severityFilterBtnClasses}`} type="radio" name="frameworks" aria-label="Medium" value='medium' onClick={(e) => setFilter(e.currentTarget.value)}/>
+                        <input className={`checked:bg-warning/20 ${severityFilterBtnClasses}`} type="radio" name="frameworks" aria-label="Low" value='low' onClick={(e) => setFilter(e.currentTarget.value)}/>
                     </div>
                 </div>
             </div>
