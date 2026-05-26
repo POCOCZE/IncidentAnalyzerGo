@@ -131,7 +131,7 @@ func (p *PostgresStore) GetByID(id string) (core.Incident, error) {
 	row := p.db.QueryRow(`SELECT id, title, severity, service_name, started_at, resolved_at FROM incidents WHERE id = $1`, id)
 	err := row.Scan(&inc.ID, &inc.Title, &inc.Severity, &inc.Service, &inc.StartedAt, &inc.ResolvedAt)
 	if err == sql.ErrNoRows {
-		return inc, fmt.Errorf("Incident ID %q not found", id)
+		return inc, fmt.Errorf("incident ID %q not found", id)
 	}
 	return inc, err
 }
