@@ -111,7 +111,7 @@ export const IncidentEditModal = ({editIcon, incidentID}: IncidentEditProps) => 
     const patchIncident = async () => {
         try {
             // Correct time with timezone; applies for startedAt and also for resolvedAt (if defined)
-            // // ! Error: I should probsbly boolean check whether time are within the same format - if not convert them to one unique one - the must respect timezones when adding or editing incdients and then chanding them to the propriate times. It's for some reason causing trouble there with error: `ERR: parsing time "2026-03-17T01:00+02:00" as "2006-01-02T15:04:05Z07:00": cannot parse "+02:00" as ":"` - the time is obviously correct, but still the backend cannot accept it after adding the timezone browser correction "+02:00" part. IncidentAdd have no problems with this - this problem is. very strange. i am not aware of any restrictions that would check two times against each other - so when one time would be with the "Z07:00" format and other with the other format - they dont match - and this could be the problem - but i am not comparing this. Wierd.
+            // // ! Error: I should probsbly boolean check whether time are within the same format - if not convert them to one unique one - the must respect timezones when adding or editing incdients and then changing them to the propriate times. It's for some reason causing trouble there with error: `ERR: parsing time "2026-03-17T01:00+02:00" as "2006-01-02T15:04:05Z07:00": cannot parse "+02:00" as ":"` - the time is obviously correct, but still the backend cannot accept it after adding the timezone browser correction "+02:00" part. IncidentAdd have no problems with this - this problem is. very strange. i am not aware of any restrictions that would check two times against each other - so when one time would be with the "Z07:00" format and other with the other format - they dont match - and this could be the problem - but i am not comparing this. Wierd.
             
             // Todo: add a check when resolvedAt already contains the timezone format - do not add one extra - this could happen in cases when editing ResolvedAt time multiple times which would mean adding this offset over and over again.
             // Incident is resolved and not changed in any way. Then adding timezone does not make sense
@@ -226,7 +226,7 @@ export const IncidentEditModal = ({editIcon, incidentID}: IncidentEditProps) => 
                         <RenderResolvedAtField />
                     </div>
                     <div className="flex flex-col items-center">
-                        {/* Currently this button does nothing, because onClick event handler that calls function is not ready yet. Yes, i could do "editing incidents" in a way that i would delete old one and recreate new one - i can do this. But i would like to learn HTTP PATCH or HTTP PUT method. This should be the correct way - but this would mean chanding backend in some way - dont have knowledge for that. */}
+                        {/* Currently this button does nothing, because onClick event handler that calls function is not ready yet. Yes, i could do "editing incidents" in a way that i would delete old one and recreate new one - i can do this. But i would like to learn HTTP PATCH or HTTP PUT method. This should be the correct way - but this would mean changing backend in some way - dont have knowledge for that. */}
                         <button onClick={() => {
                             patchIncident()
                             modalRef.current?.close()

@@ -1,20 +1,27 @@
 package main
 
-import "testing"
+import (
+	"testing"
+
+	"github.com/pococze/incident-analyzer-go/backend/core"
+)
 
 func TestMTTRSec(t *testing.T) {
-	report := &IncidentReport{
+	report := &core.IncidentReport{
 		IncidentsCount: 4,
         UnresolvedIDs: []string{"Incident1", "Incident2"},
         MTTR: "",
 	}
 
-    duration := map[string]IncidentDuration{
+    duration := map[string]core.IncidentDuration{
         "Incident1": {Seconds: 10, HMSFormat: "0m10s"},
         "Incident2": {Seconds: 10, HMSFormat: "0m10s"},
     }
 
-    report.calcMTTRSec(duration)
+    err := report.CalcMTTRSec(duration)
+    if err != nil {
+        t.Errorf("%s", err)
+    }
     got := report.MTTR
     // 20 / 2 = 10s as MTTR
     want := "10s"

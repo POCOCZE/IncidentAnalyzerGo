@@ -1,4 +1,4 @@
-package main
+package core
 
 import (
 	"encoding/json"
@@ -6,85 +6,6 @@ import (
 	"log"
 	"net/http"
 )
-
-func healthHandler(w http.ResponseWriter, r *http.Request) {
-	// Health status endpoint
-	// Set content type to application/json	
-	// Write OK as JSON reposnse
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	encodeJSON(w, map[string]string{"status": "ok"}, "")
-}
-
-func getReportHandler(store IncidentStorage) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		severity := r.URL.Query().Get("severity")
-		service := r.URL.Query().Get("service")
-		id := r.URL.Query().Get("id")
-		w.Header().Add("Content-Type", "application/json")
-		incidents, _ := store.GetAll()
-		report, err := BuildReport(incidents)
-		if err != nil {
-			w.WriteHeader(http.StatusBadRequest)
-			encodeJSON(w, map[string]string{"error": fmt.Sprintf("%s", err)}, "")
-			log.Printf("%s", err)
-		} else {
-			if severity != "" {
-				_, exist := report.BySeverity[severity]
-				if !exist {
-					w.WriteHeader(http.StatusBadRequest)
-					encodeJSON(w, map[string]string{"error": fmt.Sprintf("severity %s does not exist", severity)}, "")
-					log.Printf("ERR: Severity %s does not exist", service)
-				} else {
-					w.WriteHeader(http.StatusOK)
-					encodeJSON(w, report.BySeverity[severity], "")
-					log.Printf("INFO: Requested %s severity", severity)
-				}
-			} else if service != "" {
-				_, exist := report.ByServices[service]
-				if !exist {
-					w.WriteHeader(http.StatusBadRequest)
-					encodeJSON(w, map[string]string{"error": fmt.Sprintf("service %s does not exist", service)}, "")
-					log.Printf("ERR: Service %s does not exist", service)
-				} else {
-					w.WriteHeader(http.StatusOK)
-					encodeJSON(w, report.ByServices[service], "")
-					log.Printf("INFO: Requested %s severity", service)
-				}
-			} else if id != "" {
-				_, exist := report.ByID[id]
-				if !exist {
-					w.WriteHeader(http.StatusBadRequest)
-					encodeJSON(w, map[string]string{"error": fmt.Sprintf("service %s does not exist", id)}, "")
-					log.Printf("ERR: Service %s does not exist", id)
-				} else {
-					w.WriteHeader(http.StatusOK)
-					encodeJSON(w, report.ByID[id], "")
-					log.Printf("INFO: Requested %s severity", id)
-				}
-			} else {
-				w.WriteHeader(http.StatusOK)
-				encodeJSON(w, report, "")
-				log.Printf("INFO: Requested all incidents")
-			}
-		}
-	}
-}
-
-func getAllHandler(store IncidentStorage) http.HandlerFunc{
-	return func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "application/json")
-
-		incidents, err := store.GetAll()
-		if err != nil {
-			w.WriteHeader(http.StatusBadRequest)
-			encodeJSON(w, map[string]error{"error": err}, "")
-		} else {
-			w.WriteHeader(http.StatusOK)
-			encodeJSON(w, incidents, "")
-		}
-	}
-}
 
 func addListHandler(store IncidentStorage) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -187,6 +108,21 @@ func getByIDHandler(store IncidentStorage) http.HandlerFunc {
 	}
 }
 
+func getAllHandler(store IncidentStorage) http.HandlerFunc{
+	return func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+
+		incidents, err := store.GetAll()
+		if err != nil {
+			w.WriteHeader(http.StatusBadRequest)
+			encodeJSON(w, map[string]error{"error": err}, "")
+		} else {
+			w.WriteHeader(http.StatusOK)
+			encodeJSON(w, incidents, "")
+		}
+	}
+}
+
 func deleteByIDHandler(store IncidentStorage) http.HandlerFunc{
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Add("content-Type", "application/json")
@@ -219,53 +155,5 @@ func deleteAllHandler(store IncidentStorage) http.HandlerFunc {
 			w.WriteHeader(http.StatusOK)
 			encodeJSON(w, map[string]string{"success": "deleted all incidents"}, "")
 		}
-	}
-}
-
-func corsMiddleware(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Access-Control-Allow-Origin", "*")
-		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, DELETE, OPTIONS")
-		w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
-
-		if r.Method == "OPTIONS" {
-			w.WriteHeader(http.StatusOK)
-			return
-		}
-		next.ServeHTTP(w, r)
-	})
-}
-
-func startServer(port string, store IncidentStorage) {
-	mux := http.NewServeMux()
-	mux.HandleFunc("/healthz", healthHandler)
-	mux.HandleFunc("GET /report", getReportHandler(store))
-	mux.HandleFunc("GET /incidents", getAllHandler(store))
-	mux.HandleFunc("POST /incidents", addListHandler(store))
-	mux.HandleFunc("POST /incident", addHandler(store))
-	mux.HandleFunc("PATCH /incident/{id}", editHandler(store))
-	mux.HandleFunc("GET /incidents/{id}", getByIDHandler(store))
-	mux.HandleFunc("DELETE /incidents/{id}", deleteByIDHandler(store))
-
-	// !This removes all incidents forever! For testing.
-	mux.HandleFunc("DELETE /delete-all-incidents-forever", deleteAllHandler(store))
-
-	handler := corsMiddleware(mux)
-	log.Printf("INFO: Server listening on port :%s", port)
-	err := http.ListenAndServe(":"+port, handler)
-	if err != nil {
-		log.Fatalf("Error starting HTTP server: %s", err)
-	}
-}
-
-func encodeJSON(w http.ResponseWriter, content any, errMessage string) {
-	if errMessage == "" {
-		// If custom error message variable is empty, use default
-		errMessage = "Error encoding response"
-	}
-	
-	err := json.NewEncoder(w).Encode(content)
-	if err != nil {
-		log.Fatalf("%s: %s", errMessage, err)
 	}
 }

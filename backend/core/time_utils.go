@@ -1,4 +1,4 @@
-package main
+package core
 
 import "time"
 
@@ -23,7 +23,6 @@ func StringToTime(input string) (*time.Time, error) {
 
 func ConvertToUTC(t *time.Time) *time.Time {
 	// Converts time to UTC
-	var utcTime time.Time
-	utcTime = t.UTC()
+	utcTime := t.UTC()
 	return &utcTime
 }

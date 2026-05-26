@@ -1,4 +1,4 @@
-package main
+package core
 
 import (
 	"fmt"
@@ -72,7 +72,7 @@ func (r *IncidentReport) groupIncidentsByID(incident Incident, durations map[str
     }
 }
 
-func (r *IncidentReport) calcMTTRSec(durations map[string]IncidentDuration) error {
+func (r *IncidentReport) CalcMTTRSec(durations map[string]IncidentDuration) error {
     // Calculate Mean time to recovery - average across all
     // First is all incident durations summed, and averaged across only resolved incidents. 
     // Unresolved are not kept in mind because their duration is effectively zero and thus would avoid the calculations.
@@ -115,6 +115,16 @@ func calcIncidentDuration(incident Incident, durations map[string]IncidentDurati
     }
 }
 
+func NewIncidentReport() *IncidentReport {
+    // This is constructor function: Prepares structure for report
+    // Returns IncidentReport inizialized structure
+    return &IncidentReport {
+        ByServices: make(map[string]map[string]IncidentReportDetails),
+        BySeverity: make(map[string]map[string]IncidentReportDetails),
+        ByID: make(map[string]IncidentReportDetails),
+    }
+}
+
 func BuildReport(incidents []Incident) (*IncidentReport, error) {
     // --- Initialize maps before they can be used --- //
     report := NewIncidentReport()
@@ -136,7 +146,7 @@ func BuildReport(incidents []Incident) (*IncidentReport, error) {
     }
 
     // --- Calculate Mean time to recovery --- //
-    err := report.calcMTTRSec(durations)
+    err := report.CalcMTTRSec(durations)
     if err != nil {
         return &IncidentReport{}, err
     }
