@@ -1,5 +1,6 @@
 import { useEffect, useState, type SetStateAction } from 'react'
 import { OneButtonModal } from './Modal'
+import { IncidentEdit } from './IncidentEdit'
 import type { Incident } from './types'
 
 interface Column {
@@ -43,9 +44,6 @@ const SortableTable = ({columns, data, onDelete, onError, filter, resolvedFilter
         } else {
             return filterSearchKeyword()
         }
-        // if (resolvedFilter === null || resolvedFilter === 'all') {
-        //     return filterSearchKeyword()
-        // } 
     }
 
     // Array of filtered incidents
@@ -158,6 +156,7 @@ const SortableTable = ({columns, data, onDelete, onError, filter, resolvedFilter
                             {col.key === 'is_resolved' && row[col.key] && '✓'}
                             {col.key === 'is_resolved' && row[col.key] === false && '✗'}
                             {col.key === 'delete' && renderDeleteButton(row.id) }
+                            {col.key === 'edit' && <IncidentEdit incidentID={row.id} setError={onError} />}
                         </td>
                     ))}
                 </tr>

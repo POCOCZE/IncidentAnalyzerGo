@@ -60,6 +60,43 @@ func(p *PostgresStore) AddList(incidents []Incident) error {
 	return nil
 }
 
+func(p *PostgresStore) Edit(id string, incident Incident) error {
+	var inc Incident
+	inc, err := p.GetByID(id)
+	if err != nil {
+		return err
+	}
+	
+	// Todo: restrict chanding StartedAt too. Not yet implemented.
+	if inc.ID != incident.ID {
+		return fmt.Errorf("Chanding Incident ID is not allowed!")
+	}
+	_, err = p.db.Exec(
+		`UPDATE incidents SET id = $1, title = $2, severity = $3, service_name = $4, started_at = $5, resolved_at = $6 WHERE id = $7`,
+		incident.ID,
+		incident.Title,
+		incident.Severity,
+		incident.Service,
+		incident.StartedAt,
+		incident.ResolvedAt,
+		id,
+	)
+	if err != nil {
+		return fmt.Errorf("Incident ID %q not found", id)
+	}
+
+	// Get All incidents to satisfy function - rebuild report
+	incidents, err := p.GetAll()
+	if err != nil {
+		return err
+	}
+	_, err = BuildReport(incidents)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 func (p *PostgresStore) GetAll() ([]Incident, error) {
 	rows, err := p.db.Query(`SELECT id, title, severity, service_name, started_at, resolved_at FROM incidents`)
 	if err != nil {
@@ -104,6 +141,7 @@ func (p *PostgresStore) DeleteByID(id string) error {
 		return fmt.Errorf("incident ID %q not found", id)
 	}
 
+	// Get All incidents to satisfy function - rebuild report
 	incidents, err := p.GetAll()
 	if err != nil {
 		return err
