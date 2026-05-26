@@ -10,12 +10,13 @@ func IncidentMessage(incident Incident, durations map[string]IncidentDuration) (
     // For resolved incidents print how long it took in HMS format
     // Returns message string and boolean whether the incident is resolved
     var isResolved bool
-    message := fmt.Sprintf("Pending (Started: %s)", incident.StartedAt)
+    message := fmt.Sprintf("Pending (Started: %s)", TimeToString(incident.StartedAt))
 
-    if incident.ResolvedAt != nil {
+    isValid := IsValidTime(incident.ResolvedAt)
+    if isValid {
         isResolved = true
         resolvedIn := durations[incident.ID].HMSFormat
-        message = fmt.Sprintf("Resolved in %s (Ended: %s)", resolvedIn, incident.ResolvedAt)
+        message = fmt.Sprintf("Resolved in %s (Ended: %s)", resolvedIn, TimeToString(incident.ResolvedAt))
     }
 
     return message, isResolved
