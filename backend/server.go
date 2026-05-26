@@ -74,7 +74,7 @@ func getReportHandler(store IncidentStorage) http.HandlerFunc {
 func getAllHandler(store IncidentStorage) http.HandlerFunc{
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
-		
+
 		incidents, err := store.GetAll()
 		if err != nil {
 			w.WriteHeader(http.StatusBadRequest)
@@ -140,6 +140,30 @@ func addHandler(store IncidentStorage) http.HandlerFunc {
 			// This is not needed at all
 			// encodeJSON(w, "", "")
 			log.Printf("INFO: Added new incident ID: %s", incident.ID)
+		}
+	}
+}
+
+func editHandler(store IncidentStorage) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Add("Content-Type", "application/json")
+		var incident Incident
+		id := r.PathValue("id")
+		err := json.NewDecoder(r.Body).Decode(&incident)
+		if err != nil {
+			w.WriteHeader(http.StatusBadRequest)
+			encodeJSON(w, err, "")
+			log.Printf("ERR: %s", err)
+		}
+		err = store.Edit(id, incident)
+		if err != nil {
+			w.WriteHeader(http.StatusBadRequest)
+			encodeJSON(w, err, "")
+			log.Printf("DEBUG: Incident ID: %s | Incident data: %v", id, incident)
+			log.Printf("ERR: %s", err)
+		} else {
+			w.WriteHeader(http.StatusNoContent)
+			log.Printf("Successfully edited incident %s", id)
 		}
 	}
 }
@@ -219,6 +243,7 @@ func startServer(port string, store IncidentStorage) {
 	mux.HandleFunc("GET /incidents", getAllHandler(store))
 	mux.HandleFunc("POST /incidents", addListHandler(store))
 	mux.HandleFunc("POST /incident", addHandler(store))
+	mux.HandleFunc("PATCH /incident/{id}", editHandler(store))
 	mux.HandleFunc("GET /incidents/{id}", getByIDHandler(store))
 	mux.HandleFunc("DELETE /incidents/{id}", deleteByIDHandler(store))
 

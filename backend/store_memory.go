@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"sync"
 
 	"github.com/go-playground/validator/v10"
@@ -41,9 +42,24 @@ func (m *MemoryStore) Add(incident Incident) error {
 		}
 	}
 	
+	// Check if time is defined (resolvedAt can be null) and convert to UTC if needed
+	if IsValidTime(incident.StartedAt) {
+		incident.StartedAt = ConvertToUTC(incident.StartedAt)
+	} else {
+		return fmt.Errorf("StartedAt time is not valid!")
+	}
+	if IsValidTime(incident.ResolvedAt) {
+		incident.ResolvedAt = ConvertToUTC(incident.ResolvedAt)
+	} else {
+		incident.ResolvedAt = nil
+	}
+
 	// Append incident and rebuild report
 	m.Incidents = append(m.Incidents, incident)
-	BuildReport(m.Incidents)
+	_, err = BuildReport(m.Incidents)
+	if err != nil {
+		return fmt.Errorf("error building report: %s", err)
+	}
 
 	return nil
 }
@@ -55,6 +71,51 @@ func (m *MemoryStore) AddList(incidents []Incident) error {
 			return err
 		}
 	}
+	return nil
+}
+
+func (m *MemoryStore) Edit(id string, incident Incident) error {
+	// * Info: id - original incident ID; incident - changed incident struct; Users are not allowed to edit incident ID - returns error (frontend blocks the input field too to edit it)
+	m.Mu.Lock()
+	defer m.Mu.Unlock()
+
+	log.Printf("Received incident: %v", incident)
+
+	var isFound bool
+	for i, inc := range m.Incidents {
+		if inc.ID == id {
+			// return error if user tries to change incident ID or startedAt (e.g. using a bug)
+			// Todo: changing startedAt is not yet implemented.
+			if inc.ID != incident.ID {
+				return fmt.Errorf("Chanding Incident ID is not allowed!")
+			}
+			isFound = true
+
+			// Check if time is defined (resolvedAt can be null) and convert to UTC if needed
+			if IsValidTime(incident.StartedAt) {
+				incident.StartedAt = ConvertToUTC(incident.StartedAt)
+			} else {
+				return fmt.Errorf("StartedAt time is not valid!")
+			}
+			if IsValidTime(incident.ResolvedAt) {
+				incident.ResolvedAt = ConvertToUTC(incident.ResolvedAt)
+			} else {
+				incident.ResolvedAt = nil
+			}
+
+			m.Incidents[i] = incident
+			break
+		}
+	}
+	if isFound {
+		_, err := BuildReport(m.Incidents)
+		if err != nil {
+			return err
+		}
+	} else {
+		return fmt.Errorf("Incident %q not found", id)
+	}
+
 	return nil
 }
 
@@ -71,7 +132,11 @@ func (m *MemoryStore) GetAll() ([]Incident, error) {
 func (m *MemoryStore) GetByID(id string) (Incident, error) {
 	for _, incident := range m.Incidents {
 		if incident.ID == id {
-			return incident, nil
+			inc, err := IncidentWide(incident)
+			if err != nil {
+				return Incident{}, err
+			}
+			return inc, nil
 		}
 	}
 
