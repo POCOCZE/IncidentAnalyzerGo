@@ -1,4 +1,4 @@
-package main
+package core
 
 import (
 	"encoding/json"
@@ -20,7 +20,7 @@ func serveJsonOutput(report *IncidentReport) []byte {
     return jsonData
 }
 
-func printReport(output string, report *IncidentReport) {
+func PrintReport(output string, report *IncidentReport) {
     if output == "stdout" {
         jsonData := serveJsonOutput(report)
         fmt.Println(string(jsonData))

@@ -1,4 +1,4 @@
-package main
+package core
 
 func IncidentsWide(incidents []Incident) ([]Incident, error) {
 	var incidentsWide []Incident

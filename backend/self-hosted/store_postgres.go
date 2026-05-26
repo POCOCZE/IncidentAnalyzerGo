@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	_ "github.com/jackc/pgx/v5/stdlib"
+	"github.com/pococze/incident-analyzer-go/backend/core"
 )
 
 type PostgresStore struct {
@@ -25,7 +26,7 @@ func NewPostgresStore(connString string) (*PostgresStore, error) {
 	return &PostgresStore{db: db}, nil
 }
 
-func (p *PostgresStore) Add(incident Incident) error {
+func (p *PostgresStore) Add(incident core.Incident) error {
 	var err error
 	_, err = p.db.Exec(
 		`INSERT INTO incidents (id, title, severity, service_name, started_at, resolved_at) VALUES ($1, $2, $3, $4, $5, $6)`,
@@ -43,14 +44,14 @@ func (p *PostgresStore) Add(incident Incident) error {
 	if err != nil {
 		return err
 	}
-	_, err = BuildReport(incidents)
+	_, err = core.BuildReport(incidents)
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func(p *PostgresStore) AddList(incidents []Incident) error {
+func(p *PostgresStore) AddList(incidents []core.Incident) error {
 	for _, incident := range incidents {
 		err := p.Add(incident)
 		if err != nil {
@@ -60,8 +61,8 @@ func(p *PostgresStore) AddList(incidents []Incident) error {
 	return nil
 }
 
-func(p *PostgresStore) Edit(id string, incident Incident) error {
-	var inc Incident
+func(p *PostgresStore) Edit(id string, incident core.Incident) error {
+	var inc core.Incident
 	inc, err := p.GetByID(id)
 	if err != nil {
 		return err
@@ -90,30 +91,30 @@ func(p *PostgresStore) Edit(id string, incident Incident) error {
 	if err != nil {
 		return err
 	}
-	_, err = BuildReport(incidents)
+	_, err = core.BuildReport(incidents)
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func (p *PostgresStore) GetAll() ([]Incident, error) {
+func (p *PostgresStore) GetAll() ([]core.Incident, error) {
 	rows, err := p.db.Query(`SELECT id, title, severity, service_name, started_at, resolved_at FROM incidents`)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
 
-	var incidents []Incident
+	var incidents []core.Incident
 	for rows.Next() {
-		var inc Incident
+		var inc core.Incident
 		err := rows.Scan(&inc.ID, &inc.Title, &inc.Severity, &inc.Service, &inc.StartedAt, &inc.ResolvedAt)
 		if err != nil {
 			return nil, err
 		}
 		incidents = append(incidents, inc)
 	}
-	incidentsWide, err := IncidentsWide(incidents)
+	incidentsWide, err := core.IncidentsWide(incidents)
 	if err != nil {
 		return nil, err
 	}
@@ -121,8 +122,8 @@ func (p *PostgresStore) GetAll() ([]Incident, error) {
 	return incidentsWide, rows.Err()
 }
 
-func (p *PostgresStore) GetByID(id string) (Incident, error) {
-	var inc Incident
+func (p *PostgresStore) GetByID(id string) (core.Incident, error) {
+	var inc core.Incident
 	row := p.db.QueryRow(`SELECT id, title, severity, service_name, started_at, resolved_at FROM incidents WHERE id = $1`, id)
 	err := row.Scan(&inc.ID, &inc.Title, &inc.Severity, &inc.Service, &inc.StartedAt, &inc.ResolvedAt)
 	if err == sql.ErrNoRows {
@@ -146,7 +147,7 @@ func (p *PostgresStore) DeleteByID(id string) error {
 	if err != nil {
 		return err
 	}
-	_, err = BuildReport(incidents)
+	_, err = core.BuildReport(incidents)
 	if err != nil {
 		return err
 	}
