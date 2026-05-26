@@ -16,3 +16,19 @@ func IncidentsWide(incidents []Incident) ([]Incident, error) {
 
 	return incidentsWide, nil
 }
+
+func IncidentWide(incident Incident) (Incident, error) {
+	var incidentWide Incident
+	durations := make(map[string]IncidentDuration)
+
+	calcIncidentDuration(incident, durations)
+	message, isResolved := IncidentMessage(incident, durations)
+
+	// Set gathered variables to each incident
+	incident.Message = message
+	incident.IsResolved = isResolved
+	// Add this updated (wide) incident to slice
+	incidentWide = incident
+
+	return incidentWide, nil	
+}
