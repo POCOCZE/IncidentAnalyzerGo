@@ -30,7 +30,7 @@ func (m *MemoryStore) Add(incident core.Incident) error {
 	m.Mu.Lock()
 	defer m.Mu.Unlock()
 
-	var validate *validator.Validate = validator.New(validator.WithRequiredStructEnabled())
+	validate := validator.New(validator.WithRequiredStructEnabled())
 	err := validate.Struct(incident)
 	if err != nil {
 		return err
@@ -92,7 +92,7 @@ func (m *MemoryStore) Edit(id string, incident core.Incident) error {
 			// return error if user tries to change incident ID or startedAt (e.g. using a bug)
 			// Todo: changing startedAt is not yet implemented.
 			if inc.ID != incident.ID {
-				return fmt.Errorf("chanding Incident ID is not allowed")
+				return fmt.Errorf("changing Incident ID is not allowed")
 			}
 			isFound = true
 

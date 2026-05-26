@@ -16,11 +16,11 @@ func NewPostgresStore(connString string) (*PostgresStore, error) {
 	// Constructor function
 	db, err := sql.Open("pgx", connString)
 	if err != nil {
-		return nil, fmt.Errorf("Oppening database: %w", err)
+		return nil, fmt.Errorf("oppening database: %w", err)
 	}
 
 	if err := db.Ping(); err != nil {
-		return nil, fmt.Errorf("Connecting to database: %w", err)
+		return nil, fmt.Errorf("connecting to database: %w", err)
 	}
 
 	return &PostgresStore{db: db}, nil
@@ -68,9 +68,9 @@ func(p *PostgresStore) Edit(id string, incident core.Incident) error {
 		return err
 	}
 	
-	// Todo: restrict chanding StartedAt too. Not yet implemented.
+	// Todo: restrict changing StartedAt too. Not yet implemented.
 	if inc.ID != incident.ID {
-		return fmt.Errorf("Chanding Incident ID is not allowed!")
+		return fmt.Errorf("changing Incident ID is not allowed")
 	}
 	_, err = p.db.Exec(
 		`UPDATE incidents SET id = $1, title = $2, severity = $3, service_name = $4, started_at = $5, resolved_at = $6 WHERE id = $7`,
@@ -83,7 +83,7 @@ func(p *PostgresStore) Edit(id string, incident core.Incident) error {
 		id,
 	)
 	if err != nil {
-		return fmt.Errorf("Incident ID %q not found", id)
+		return fmt.Errorf("incident ID %q not found", id)
 	}
 
 	// Get All incidents to satisfy function - rebuild report

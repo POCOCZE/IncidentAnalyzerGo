@@ -23,6 +23,6 @@ func StringToTime(input string) (*time.Time, error) {
 
 func ConvertToUTC(t *time.Time) *time.Time {
 	// Converts time to UTC
-	var utcTime time.Time = t.UTC()
+	utcTime := t.UTC()
 	return &utcTime
 }

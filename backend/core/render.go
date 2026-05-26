@@ -27,7 +27,7 @@ func PrintReport(output string, report *IncidentReport) (err error) {
     } else {
         file, err := os.Create(output)
         if err != nil {
-            return fmt.Errorf("Error creating output file: %s", err)
+            return fmt.Errorf("error creating output file: %s", err)
         }
         defer func() {
             if closeErr := file.Close(); closeErr != nil {
@@ -38,7 +38,7 @@ func PrintReport(output string, report *IncidentReport) (err error) {
         jsonData := serveJsonOutput(report)
         _, err = file.Write(jsonData)
         if err != nil {
-            return fmt.Errorf("Error writing report to output file: %s", err)
+            return fmt.Errorf("error writing report to output file: %s", err)
         }
         return err
     }
