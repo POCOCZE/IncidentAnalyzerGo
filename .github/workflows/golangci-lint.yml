@@ -1,0 +1,42 @@
+name: golangci-lint
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'backend/**'
+  pull_request:
+    paths:
+      - 'backend/**'
+
+permissions:
+  contents: read
+
+jobs:
+  lint-core:
+    name: lint (core)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-go@v6
+        with:
+          go-version: stable
+          cache-dependency-path: backend/core/go.sum
+      - uses: golangci/golangci-lint-action@v9
+        with:
+          version: v2.10
+          working-directory: backend/core
+
+  lint-self-hosted:
+    name: lint (self-hosted)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-go@v6
+        with:
+          go-version: stable
+          cache-dependency-path: backend/self-hosted/go.sum
+      - uses: golangci/golangci-lint-action@v9
+        with:
+          version: v2.10
+          working-directory: backend/self-hosted
