@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.2.2](https://github.com/POCOCZE/IncidentAnalyzerGo/compare/self-hosted-v0.2.1...self-hosted/v0.2.2) (2026-05-27)
+
+
+### Bug Fixes
+
+* :package: updated core package ver ([373590b](https://github.com/POCOCZE/IncidentAnalyzerGo/commit/373590bae42b1e243afd93319758702eaa2998f9))
+* :package: updated core package ver ([3750408](https://github.com/POCOCZE/IncidentAnalyzerGo/commit/375040880da2c013603477ada3afda12df75a248))
+
 ## [0.2.1](https://github.com/POCOCZE/IncidentAnalyzerGo/compare/self-hosted-v0.2.0...self-hosted-v0.2.1) (2026-05-27)
 
 
