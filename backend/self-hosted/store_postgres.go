@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	_ "github.com/jackc/pgx/v5/stdlib"
-	"github.com/pococze/incident-analyzer-go/backend/core"
+	"github.com/pococze/incidentanalyzergo/backend/core"
 )
 
 type PostgresStore struct {

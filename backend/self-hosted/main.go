@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/pococze/incident-analyzer-go/backend/core"
+	"github.com/pococze/incidentanalyzergo/backend/core"
 )
 
 func main() {

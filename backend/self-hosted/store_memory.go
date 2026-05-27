@@ -6,7 +6,7 @@ import (
 	"sync"
 
 	"github.com/go-playground/validator/v10"
-	"github.com/pococze/incident-analyzer-go/backend/core"
+	"github.com/pococze/incidentanalyzergo/backend/core"
 )
 
 // ! This file is meant only for development purposes and testing.
