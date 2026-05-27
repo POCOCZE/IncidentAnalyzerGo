@@ -91,7 +91,7 @@ export const ExportIncidents = () => {
 
 export const IncidentListCenter = () => {
     const { incidents, setIncidents, setCurrentIncCount, filter, resolvedFilter, loading, error, setError } = useIncidentList()
-    const [searchBg, setSearchBg] = useState<string>('')
+    const [searchBg, setSearchBg] = useState<string>('bg-base-200')
     const [searchKeyword, setSearchKeyword] = useState<string>('')
     
     if (loading) {
@@ -134,22 +134,22 @@ export const IncidentListCenter = () => {
     }
 
     const columns = [
+        { key: 'is_resolved', label: ''},
         { key: 'id', label: 'ID'},
         { key: 'title', label: 'Title'},
         { key: 'severity', label: 'Severity',
-            render: (value: string) => <span className={severityColor[value]}>{severityLabel[value]}</span>},
+            render: (value: string) => <span className={`text-xs ${severityColor[value]}`}>{severityLabel[value]}</span>},
         { key: 'service_name', label: 'Service name'},
         // { key: 'started_at', label: 'Started at'},
         // { key: 'resolved_at', label: 'Resolved at'},
-        { key: 'message', label: 'Message'},
-        { key: 'is_resolved', label: 'Is resolved'},
+        { key: 'MyMessage', label: 'Message'},
         { key: 'edit', label: ''},
         { key: 'delete', label: ''},
     ]
 
     const searchIncidentsField = () => {
         return (
-            <label className={`input rounded-2xl w-60 border-base-content/50 ${searchBg}`} onMouseEnter={() => setSearchBg('bg-base-200')} onMouseLeave={() => setSearchBg('')}>
+            <label className={`input rounded-2xl w-60 border-base-content/50 ${searchBg}`} onMouseEnter={() => setSearchBg('bg-base-100')} onMouseLeave={() => setSearchBg('bg-base-200')}>
                 <svg className="h-[1em] opacity-50" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><g strokeLinejoin="round" strokeLinecap="round" strokeWidth="2.5" fill="none" stroke="currentColor"><circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.3-4.3"></path></g></svg>
                 <input type="search" placeholder="Search incidents" value={searchKeyword} onChange={(e) => setSearchKeyword(e.currentTarget.value)} />
             </label>
@@ -162,7 +162,7 @@ export const IncidentListCenter = () => {
             <div className='flex justify-end m-1'>
                 {searchIncidentsField()}
             </div>
-            <div className='rounded-box border border-base-content/50 m-1 mb-4 overflow-auto'>
+            <div className='rounded-box border border-base-content/50 m-1 mb-4 overflow-auto max-w-[80vw]'>
                 {incidents ?
                 <SortableTable columns={columns} data={incidents} onDelete={setIncidents} onError={setError} filter={filter} resolvedFilter={resolvedFilter} setCurrentIncCount={setCurrentIncCount} searchKeyword={searchKeyword}/>
                 : emptyIncidentsGuard()}
