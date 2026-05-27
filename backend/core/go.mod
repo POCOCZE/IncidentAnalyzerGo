@@ -1,4 +1,4 @@
-module github.com/pococze/incident-analyzer-go/backend
+module github.com/pococze/incidentanalyzergo/backend/core
 
 go 1.26.1
 
