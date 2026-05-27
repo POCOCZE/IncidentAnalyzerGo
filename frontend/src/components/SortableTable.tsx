@@ -134,6 +134,50 @@ const SortableTable = ({columns, data, onDelete, onError, filter, resolvedFilter
         )
     }
 
+    const subtractDates = (date1: string, date2: string): number => {
+        const time1 = new Date(date1).getTime()
+        const time2 = new Date(date2).getTime()
+        let timeDiff: number
+        if (time1 > time2) {
+            timeDiff = time1 - time2
+        } else {
+            timeDiff = time2 - time1
+        }
+        return Math.round(timeDiff / 1000)
+    }
+
+    const secondsToTime = (seconds: number): string => {
+        const hours = Math.floor(seconds / 3600)
+        seconds %= 3600
+        const minutes = Math.floor(seconds / 60)
+        if (hours === 0) {
+            return `${minutes}m`
+        } else {
+            return `${hours}h${minutes}m`
+        }
+    }
+
+    const UTCToBrowserTime = (time: string):string => {
+        const d = new Date(time)
+        return `${d.getDate()}.${d.getMonth()}.${d.getFullYear()} ${d.getHours()}:${d.getMinutes()}`
+    }
+
+    const setupMessage = (row: any) => {
+        if (row.is_resolved) {
+            const timeDiff = subtractDates(row.started_at, row.resolved_at)
+            const time = secondsToTime(timeDiff)
+            const browserTime = UTCToBrowserTime(row.resolved_at)
+            return (
+                <div className='flex flex-col'>
+                    <span>Resolved in {time}</span>
+                    <span className='text-xs text-base-content/70'>Ended: {browserTime}</span>
+                </div>
+            )
+        } else {
+            return <span>Pending...</span>
+        }
+    }
+
     return (
         <table className='table table-md table-pin-rows table-pin-cols overflow-hidden'>
             <thead>
@@ -148,11 +192,12 @@ const SortableTable = ({columns, data, onDelete, onError, filter, resolvedFilter
             </thead>
             <tbody>
                 {sortedData.map((row, index) => (
-                <tr key={row.id || index}>
+                <tr className={`${index % 2 && 'bg-base-200'}`} key={row.id || index}>
                     {columns.map(col => (
                         <td key={col.key}>
                             {col.render ? col.render(row[col.key]) : row[col.key]}
                             {col.key === 'resolved_at' && row[col.key] === null && 'Unresolved'}
+                            {col.key === 'MyMessage' && setupMessage(row)}
                             {col.key === 'is_resolved' && row[col.key] && '✓'}
                             {col.key === 'is_resolved' && row[col.key] === false && '✗'}
                             {col.key === 'delete' && renderDeleteButton(row.id) }
