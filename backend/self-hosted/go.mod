@@ -5,7 +5,7 @@ go 1.26.1
 require (
 	github.com/go-playground/validator/v10 v10.30.2
 	github.com/jackc/pgx/v5 v5.9.2
-	github.com/pococze/incidentanalyzergo/backend/core v0.2.0
+	github.com/pococze/incidentanalyzergo/backend/core v0.0.0-20260527134334-62380c635319
 )
 
 require (
