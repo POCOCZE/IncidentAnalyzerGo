@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.2.1](https://github.com/POCOCZE/IncidentAnalyzerGo/compare/self-hosted-v0.2.0...self-hosted-v0.2.1) (2026-05-27)
+
+
+### Bug Fixes
+
+* :building_construction: Separated go.mod files. ([9bf3497](https://github.com/POCOCZE/IncidentAnalyzerGo/commit/9bf34973ed2d4b26848291a830404c691b13e10c))
+* :building_construction: Separated go.mod files. ([4696fbd](https://github.com/POCOCZE/IncidentAnalyzerGo/commit/4696fbdf4ae544412ad90ed47e50d872897669cc))
+
 ## [0.2.0](https://github.com/POCOCZE/IncidentAnalyzerGo/compare/self-hosted-v0.1.0...self-hosted-v0.2.0) (2026-05-26)
 
 
