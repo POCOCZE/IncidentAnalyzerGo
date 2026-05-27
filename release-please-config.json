@@ -5,11 +5,11 @@
   "packages": {
     "backend/core": {
       "release-type": "go",
-      "component": "core"
+      "component": "backend/core"
     },
     "backend/self-hosted": {
       "release-type": "go",
-      "component": "self-hosted"
+      "component": "backend/self-hosted"
     },
     "frontend": {
       "release-type": "node",
