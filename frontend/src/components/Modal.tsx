@@ -95,17 +95,21 @@ export const IncidentEditModal = ({editIcon, incidentID}: IncidentEditProps) => 
         }
     }
 
-    const ResolvedAtToUTC = async ():Promise<string | undefined> => {
-        const now = new Date()
-        const timezoneOffsetMinutes = now.getTimezoneOffset()
-
-        // Convert to UTC
-        if (resolvedAt === undefined) {
-            throw new Error("ResolvedAt is undefined.")
+    // This function is bahiving wierdly - does not calculate timezones properly.
+    const timeStringToUTC = async (time: string | undefined):Promise<string> => {
+        try {
+            if (time === undefined) {
+                throw new Error("time variable is undefined.")
+            }
+    
+            // Convert to UTC
+            const userDate = new Date(time)
+            return userDate.toISOString()
+        } catch (err) {
+            setError(err instanceof Error ? err.message : 'Unknown error occured')
+            setLoading(false)
+            return ''
         }
-        const userDate = new Date(resolvedAt)
-        const utcDate = new Date(userDate.getTime() + timezoneOffsetMinutes * 60000)
-        return utcDate.toISOString()
     }
 
     const patchIncident = async () => {
@@ -116,12 +120,12 @@ export const IncidentEditModal = ({editIcon, incidentID}: IncidentEditProps) => 
             // Todo: add a check when resolvedAt already contains the timezone format - do not add one extra - this could happen in cases when editing ResolvedAt time multiple times which would mean adding this offset over and over again.
             // Incident is resolved and not changed in any way. Then adding timezone does not make sense
 
-            console.log(`Trying so send this data:, ${id}, ${title}, ${severity}, ${serviceName}, ${startedAt}, ${ await ResolvedAtToUTC()}`)
+            console.log(`Trying so send this data:, ${id}, ${title}, ${severity}, ${serviceName}, ${startedAt}, ${ await timeStringToUTC(resolvedAt)}`)
 
             const response = await fetch(`http://localhost:8080/incident/${incidentID}`, {
                 method: 'PATCH',
                 headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({id: id, title: title, severity: severity, service_name: serviceName, started_at: startedAt, resolved_at: await ResolvedAtToUTC()})
+                body: JSON.stringify({id: id, title: title, severity: severity, service_name: serviceName, started_at: startedAt, resolved_at: await timeStringToUTC(resolvedAt)})
             })
             if (!response?.ok) {
                 const errorData = await response.json()
