@@ -1,6 +1,6 @@
 # Changelog
 
-## [0.2.0](https://github.com/POCOCZE/IncidentAnalyzerGo/compare/frontend-v0.1.0...frontend-v0.2.0) (2026-05-26)
+## [0.2.0](https://github.com/POCOCZE/IncidentAnalyzerGo/compare/frontend/v0.1.0...frontend/v0.2.0) (2026-05-27)
 
 
 ### Features
@@ -20,6 +20,8 @@
 
 * :adhesive_bandage: Updated gitignore ([0be291a](https://github.com/POCOCZE/IncidentAnalyzerGo/commit/0be291a21ddcafd0b2a82da424acb66b906459e8))
 * :bug: Fixed another CI lint errors ([64be4b6](https://github.com/POCOCZE/IncidentAnalyzerGo/commit/64be4b62b5b3f9edaee79229c70c037864f52913))
+* :fire: Removed changelogs and manifest ([38465e4](https://github.com/POCOCZE/IncidentAnalyzerGo/commit/38465e41fd6da1b79621c860d9e337628e095548))
+* :fire: Removed changelogs and manifest ([2606753](https://github.com/POCOCZE/IncidentAnalyzerGo/commit/260675341b611bdd2c0843497bf33010777adafe))
 * :wrench: Removed unnecessary defaultValue and increased width of severity select ([783a29c](https://github.com/POCOCZE/IncidentAnalyzerGo/commit/783a29c1bfd37bc66b772ddee28ffe5e56bedd18))
 * 🐛 Updated severity colors of badges. ([b5f8847](https://github.com/POCOCZE/IncidentAnalyzerGo/commit/b5f88474992f3ae0fc5cdb3db129a1f5f17de254))
 * 🐛 Updated severity colors of badges. ([6e86442](https://github.com/POCOCZE/IncidentAnalyzerGo/commit/6e86442cebffd621a07889f071bb472550169eb8))
