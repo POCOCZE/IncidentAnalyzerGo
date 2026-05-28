@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.3.0](https://github.com/POCOCZE/IncidentAnalyzerGo/compare/frontend/v0.2.0...frontend/v0.3.0) (2026-05-28)
+
+
+### Features
+
+* :sparkles: Creating `message` field at frontend side ([c33c8c1](https://github.com/POCOCZE/IncidentAnalyzerGo/commit/c33c8c1d29ea79f96030e10523605b9c37ec90a0))
+
+
+### Bug Fixes
+
+* :bug: Fixed wrong time convertion ([bab7096](https://github.com/POCOCZE/IncidentAnalyzerGo/commit/bab7096e4f7778fadc2ae9fb6f22cf649b938196))
+
 ## [0.2.0](https://github.com/POCOCZE/IncidentAnalyzerGo/compare/frontend/v0.1.0...frontend/v0.2.0) (2026-05-27)
 
 
