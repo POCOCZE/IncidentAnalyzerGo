@@ -23,9 +23,7 @@ interface SortableTableProps {
 const SortableTable = ({columns, data, onDelete, onError, filter, resolvedFilter, setCurrentIncCount, searchKeyword}: SortableTableProps) => {
     const [sortKey, setSortKey] = useState<string>('id')
     const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc')
-    // Todo: Variable to set table background when cursor hovers over the row. Did not work using `onMouseEnter` event handler - targets whole table, not row.
-    // const [hoverRowBg, setHoverRowBg] = useState<string>('')
-    // create a copy of data that gets then filtered after incident gets deleted: so after each deletion no /incidents call is needed.
+    const [currentHoveredRowID, setcurrentHoveredRowID] = useState<string | null>(null)
 
     const filterSearchKeyword = () => {
         if (searchKeyword === '') {
@@ -61,6 +59,10 @@ const SortableTable = ({columns, data, onDelete, onError, filter, resolvedFilter
     }, [filter, resolvedFilter, searchKeyword, data])
 
     const handleSort = async (colKey: string) => {
+        // Do not sort "message" and "other" columns
+        if (colKey === 'new_message' || colKey === 'other') {
+            return
+        }
         if (colKey === sortKey) {
             setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc')
         } else {
@@ -108,29 +110,28 @@ const SortableTable = ({columns, data, onDelete, onError, filter, resolvedFilter
     }
 
     const renderDeleteButton = (incidentID: string) => {
-
         return (
-            <OneButtonModal buttonText={
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="size-4">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0" />
-                </svg>
-            } title={
-                <>
-                    <span>Are you sure you want to delete </span>
-                    <span className='bg-linear-to-r from-violet-600 to-blue-500 text-transparent bg-clip-text'>{incidentID}</span>
-                    <span> ?</span>
-                </>
-            } description={
-                <>
-                    This action is irreversible.
-                    <br/>
-                    Incident will be removed forever after its deleted!
-                </>
-            } closeButtonText={
-                <>
-                    <button className='btn btn-sm btn-error absolute bottom-4 right-4' onClick={() => deleteIncident(incidentID)}>Delete</button>
-                </>
-            } />
+                <OneButtonModal buttonText={
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="size-4">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0" />
+                    </svg>
+                } title={
+                    <>
+                        <span>Are you sure you want to delete </span>
+                        <span className='bg-linear-to-r from-violet-600 to-blue-500 text-transparent bg-clip-text'>{incidentID}</span>
+                        <span> ?</span>
+                    </>
+                } description={
+                    <>
+                        This action is irreversible.
+                        <br/>
+                        Incident will be removed forever after its deleted!
+                    </>
+                } closeButtonText={
+                    <>
+                        <button className='btn btn-sm btn-error absolute bottom-4 right-4' onClick={() => deleteIncident(incidentID)}>Delete</button>
+                    </>
+                } />
         )
     }
 
@@ -158,8 +159,15 @@ const SortableTable = ({columns, data, onDelete, onError, filter, resolvedFilter
     }
 
     const UTCToBrowserTime = (time: string):string => {
-        const d = new Date(time)
-        return `${d.getDate()}.${d.getMonth()}.${d.getFullYear()} ${d.getHours()}:${d.getMinutes()}`
+        const d = new Date(time).toLocaleString('default', {
+            month: 'short',
+            day: '2-digit',
+            year: 'numeric',
+            hour: '2-digit',
+            hour12: false,
+            minute: '2-digit'
+        })
+        return d
     }
 
     const setupMessage = (row: any) => {
@@ -174,7 +182,32 @@ const SortableTable = ({columns, data, onDelete, onError, filter, resolvedFilter
                 </div>
             )
         } else {
-            return <span>Pending...</span>
+            const browserTime = UTCToBrowserTime(row.started_at)
+            return (
+                <div className='flex flex-col'>
+                    <span>Pending...</span>
+                    <span className='text-xs text-base-content/70'>Started: {browserTime}</span>
+                </div>
+            )
+        }
+    }
+
+    const renderTableButtons = (row: any) => {
+        if (row.id === currentHoveredRowID) {
+            return (
+                <>
+                    <IncidentEdit incidentID={row.id} setError={onError} />
+                    {renderDeleteButton(row.id)}
+                </>
+            )
+        }
+    }
+
+    const renderIsResolved = (colVal: any) => {
+        if (colVal) {
+            return '✓'
+        } else {
+            return '✗'
         }
     }
 
@@ -183,7 +216,7 @@ const SortableTable = ({columns, data, onDelete, onError, filter, resolvedFilter
             <thead>
                 <tr>
                 { columns.map(col => (
-                    <th key={col.key} onClick={() => handleSort(col.key)} className='cursor-pointer select-none'>
+                    <th key={col.key} onClick={() => handleSort(col.key)} className={`cursor-pointer select-none ${col.key === 'other' && 'w-28'}`}>
                         {col.label}
                         {sortKey === col.key && (sortDirection === 'asc' ? ' ↑' : ' ↓')}
                     </th>
@@ -192,16 +225,14 @@ const SortableTable = ({columns, data, onDelete, onError, filter, resolvedFilter
             </thead>
             <tbody>
                 {sortedData.map((row, index) => (
-                <tr className={`${index % 2 && 'bg-base-200'}`} key={row.id || index}>
+                <tr className={`${row.id === currentHoveredRowID && 'bg-base-300'}`} key={row.id || index}>
                     {columns.map(col => (
-                        <td key={col.key}>
+                        <td key={col.key} onMouseEnter={() => setcurrentHoveredRowID(row.id)} onMouseLeave={() => setcurrentHoveredRowID(null)}>
                             {col.render ? col.render(row[col.key]) : row[col.key]}
                             {col.key === 'resolved_at' && row[col.key] === null && 'Unresolved'}
-                            {col.key === 'MyMessage' && setupMessage(row)}
-                            {col.key === 'is_resolved' && row[col.key] && '✓'}
-                            {col.key === 'is_resolved' && row[col.key] === false && '✗'}
-                            {col.key === 'delete' && renderDeleteButton(row.id) }
-                            {col.key === 'edit' && <IncidentEdit incidentID={row.id} setError={onError} />}
+                            {col.key === 'new_message' && setupMessage(row)}
+                            {col.key === 'is_resolved' && renderIsResolved(row[col.key])}
+                            {col.key === 'other' && renderTableButtons(row)}
                         </td>
                     ))}
                 </tr>

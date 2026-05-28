@@ -1,4 +1,4 @@
-import { DownloadReport, IncidentReportProvider } from './IncidentReport'
+import { DownloadReport, IncidentReportProvider, IncidentsUnresolved } from './IncidentReport'
 import { ExportIncidents, IncidentListProvider } from './IncidentList'
 
 const HomePage = () => {
@@ -12,6 +12,13 @@ const HomePage = () => {
                 </div>
                 <div className='flex flex-col mt-12'>
                     <span className='text-xl font-bold'>Quick actions</span>
+                    <div className='flex mt-2'>
+                        <div className="flex flex-col p-4 m-4 bg-base-200 rounded-xl shadow h-fit">
+                        <IncidentReportProvider>
+                            <IncidentsUnresolved />
+                        </IncidentReportProvider>
+                        </div>
+                    </div>
                     <div className='flex mt-2'>
                         <div className="flex flex-col p-4 m-4 bg-base-200 rounded-xl shadow h-fit">
                             <IncidentReportProvider>

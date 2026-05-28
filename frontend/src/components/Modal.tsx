@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useRef } from 'react'
 import type { Incident } from './types'
 import ToastNotification from './ToastNotification'
 
@@ -20,7 +20,7 @@ export const OneButtonModal = ({buttonText, title, description, closeButtonText}
     return (
         <>
         {/* Open modal */}
-        <button className='btn btn-xs hover:btn-error btn-ghost' onClick={() => modalRef.current?.showModal()}>{buttonText}</button>
+        <button className='btn btn-xs hover:btn-error btn-ghost mx-1' onClick={() => modalRef.current?.showModal()}>{buttonText}</button>
         <dialog ref={modalRef} className="modal modal-bottom sm:modal-middle">
             <div className="modal-box">
                 <span className="font-bold text-xl">{title}</span>
@@ -95,7 +95,6 @@ export const IncidentEditModal = ({editIcon, incidentID}: IncidentEditProps) => 
         }
     }
 
-    // This function is bahiving wierdly - does not calculate timezones properly.
     const timeStringToUTC = async (time: string | undefined):Promise<string> => {
         try {
             if (time === undefined) {
@@ -114,12 +113,6 @@ export const IncidentEditModal = ({editIcon, incidentID}: IncidentEditProps) => 
 
     const patchIncident = async () => {
         try {
-            // Correct time with timezone; applies for startedAt and also for resolvedAt (if defined)
-            // // ! Error: I should probsbly boolean check whether time are within the same format - if not convert them to one unique one - the must respect timezones when adding or editing incdients and then changing them to the propriate times. It's for some reason causing trouble there with error: `ERR: parsing time "2026-03-17T01:00+02:00" as "2006-01-02T15:04:05Z07:00": cannot parse "+02:00" as ":"` - the time is obviously correct, but still the backend cannot accept it after adding the timezone browser correction "+02:00" part. IncidentAdd have no problems with this - this problem is. very strange. i am not aware of any restrictions that would check two times against each other - so when one time would be with the "Z07:00" format and other with the other format - they dont match - and this could be the problem - but i am not comparing this. Wierd.
-            
-            // Todo: add a check when resolvedAt already contains the timezone format - do not add one extra - this could happen in cases when editing ResolvedAt time multiple times which would mean adding this offset over and over again.
-            // Incident is resolved and not changed in any way. Then adding timezone does not make sense
-
             console.log(`Trying so send this data:, ${id}, ${title}, ${severity}, ${serviceName}, ${startedAt}, ${ await timeStringToUTC(resolvedAt)}`)
 
             const response = await fetch(`http://localhost:8080/incident/${incidentID}`, {
@@ -190,7 +183,7 @@ export const IncidentEditModal = ({editIcon, incidentID}: IncidentEditProps) => 
     return (
         <>
         {RenderToast()}
-        <button className='btn btn-xs hover:btn-info btn-ghost' onClick={() => {
+        <button className='btn btn-xs btn-ghost hover:bg-base-100 hover:border-base-content active:btn-warning' onClick={() => {
             modalRef.current?.showModal()
             fetchIncidentByID()
             {RenderLoading()}
@@ -203,9 +196,6 @@ export const IncidentEditModal = ({editIcon, incidentID}: IncidentEditProps) => 
                 </div>
                 <fieldset className="fieldset rounded-box shadow p-4 bg-base-200">
                     <div className="flex flex-col">
-                        {/* <label className="label">Incident name</label>
-                        <input value={id} onChange={(e) => setID(e.target.value)} type="text" className="input mb-4 lg:min-w-[20vw] bg-base-100" disabled/> */}
-
                         <label className="label">Title</label>
                         <input value={title} onChange={(e) => setTitle(e.target.value)} type="text" className="input mb-4 lg:min-w-[20vw]" />
 
@@ -222,15 +212,9 @@ export const IncidentEditModal = ({editIcon, incidentID}: IncidentEditProps) => 
                         <label className="label">Service Name</label>
                         <input value={serviceName} onChange={(e) => setServiceName(e.target.value)} type="text" className="input mb-4 lg:min-w-[20vw]" />
 
-                        {/* It's better to disable this so users cant change when the incident started to remain objective. */}
-                        {/* <label className="label">Started at</label>
-                        <label className="input mb-4 lg:min-w-[20vw] bg-base-100">
-                            <input value={startedAt} onChange={(e) => setStartedAt(e.target.value)} type="datetime-local" disabled />
-                        </label> */}
                         <RenderResolvedAtField />
                     </div>
                     <div className="flex flex-col items-center">
-                        {/* Currently this button does nothing, because onClick event handler that calls function is not ready yet. Yes, i could do "editing incidents" in a way that i would delete old one and recreate new one - i can do this. But i would like to learn HTTP PATCH or HTTP PUT method. This should be the correct way - but this would mean changing backend in some way - dont have knowledge for that. */}
                         <button onClick={() => {
                             patchIncident()
                             modalRef.current?.close()
