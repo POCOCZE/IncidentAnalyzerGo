@@ -120,10 +120,10 @@ export const IncidentListCenter = () => {
     }
 
     const severityColor: Record<string, string> = {
-        critical: 'badge border-base-content bg-error/70 text-black dark:text-white font-semibold',
+        critical: 'badge border-base-content bg-error/80 text-black dark:text-white font-semibold',
         high: 'badge border-base-content bg-warning text-black dark:text-white font-semibold',
-        medium: 'badge border-base-content bg-warning/50 text-black dark:text-white font-semibold',
-        low: 'badge border-base-content bg-warning/20 text-black dark:text-white font-semibold',
+        medium: 'badge border-base-content bg-orange-400 text-black dark:text-white font-semibold',
+        low: 'badge border-base-content bg-yellow-500 text-black dark:text-white font-semibold',
     };
 
     const severityLabel: Record<string, string> = {
@@ -135,16 +135,14 @@ export const IncidentListCenter = () => {
 
     const columns = [
         { key: 'is_resolved', label: ''},
-        { key: 'id', label: 'ID'},
+        { key: 'id', label: 'ID',
+            render: (value: string) => <span className='font-semibold'>{value}</span>},
         { key: 'title', label: 'Title'},
         { key: 'severity', label: 'Severity',
             render: (value: string) => <span className={`text-xs ${severityColor[value]}`}>{severityLabel[value]}</span>},
         { key: 'service_name', label: 'Service name'},
-        // { key: 'started_at', label: 'Started at'},
-        // { key: 'resolved_at', label: 'Resolved at'},
-        { key: 'MyMessage', label: 'Message'},
-        { key: 'edit', label: ''},
-        { key: 'delete', label: ''},
+        { key: 'new_message', label: 'Message'},
+        { key: 'other', label: ''}
     ]
 
     const searchIncidentsField = () => {
@@ -162,7 +160,7 @@ export const IncidentListCenter = () => {
             <div className='flex justify-end m-1'>
                 {searchIncidentsField()}
             </div>
-            <div className='rounded-box border border-base-content/50 m-1 mb-4 overflow-auto max-w-[80vw]'>
+            <div className='rounded-box border border-base-content/50 bg-base-200 m-1 mb-4 overflow-auto max-w-[80vw]'>
                 {incidents ?
                 <SortableTable columns={columns} data={incidents} onDelete={setIncidents} onError={setError} filter={filter} resolvedFilter={resolvedFilter} setCurrentIncCount={setCurrentIncCount} searchKeyword={searchKeyword}/>
                 : emptyIncidentsGuard()}
@@ -189,14 +187,16 @@ export const IncidentListSidebar = () => {
 
     const incFilterBtnClasses = "btn btn-xs btn-neutral checked:text-black dark:checked:text-white border-base-content m-0.5 px-3"
 
+    const statClassName = 'stat-value text-xl'
+
     const handleIncidentCount = () => {
         if (currentIncCount === null) {
             return (
-                <div className="stat-value">NaN</div>
+                <div className={statClassName}>NaN</div>
             )
         }
         return (
-            <div className="stat-value">{currentIncCount}/{incidents?.length}</div>
+            <div className={statClassName}>{currentIncCount}/{incidents?.length}</div>
         )
     }
 
