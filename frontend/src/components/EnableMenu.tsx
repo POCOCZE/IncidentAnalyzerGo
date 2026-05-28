@@ -1,3 +1,5 @@
+import { IncidentReportProvider, IncidentsUnresolvedText } from "./IncidentReport"
+
 interface MenuProps {
     selected: string
     onSelect: (value: string) => void
@@ -31,11 +33,18 @@ const EnableMenu = ({selected, onSelect}: MenuProps) => {
                 </a>
             </li>
             <li className={selected === 'Incidents' ? menuParams : ''} onClick={() => {selectedLogic('Incidents')}}>
-                <a className="tooltip tooltip-right" data-tip="Incidents">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className={selected === 'Incidents' ? menuIconParams : 'size-6'}>
-                <path d="M5.625 3.75a2.625 2.625 0 1 0 0 5.25h12.75a2.625 2.625 0 0 0 0-5.25H5.625ZM3.75 11.25a.75.75 0 0 0 0 1.5h16.5a.75.75 0 0 0 0-1.5H3.75ZM3 15.75a.75.75 0 0 1 .75-.75h16.5a.75.75 0 0 1 0 1.5H3.75a.75.75 0 0 1-.75-.75ZM3.75 18.75a.75.75 0 0 0 0 1.5h16.5a.75.75 0 0 0 0-1.5H3.75Z" />
-                </svg>
-                </a>
+                <div className="indicator">
+                    <span className="indicator-item badge badge-error badge-xs absolute top-2 right-2">
+                        <IncidentReportProvider>
+                            <IncidentsUnresolvedText />
+                        </IncidentReportProvider>
+                    </span>
+                    <a className="tooltip tooltip-right" data-tip="Incidents">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className={selected === 'Incidents' ? menuIconParams : 'size-6'}>
+                    <path d="M5.625 3.75a2.625 2.625 0 1 0 0 5.25h12.75a2.625 2.625 0 0 0 0-5.25H5.625ZM3.75 11.25a.75.75 0 0 0 0 1.5h16.5a.75.75 0 0 0 0-1.5H3.75ZM3 15.75a.75.75 0 0 1 .75-.75h16.5a.75.75 0 0 1 0 1.5H3.75a.75.75 0 0 1-.75-.75ZM3.75 18.75a.75.75 0 0 0 0 1.5h16.5a.75.75 0 0 0 0-1.5H3.75Z" />
+                    </svg>
+                    </a>
+                </div>
             </li>
             <li className={selected === 'Report' ? menuParams : ''} onClick={() => {selectedLogic('Report')}}>
                 <a className="tooltip tooltip-right" data-tip="Report">
