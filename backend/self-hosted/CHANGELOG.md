@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.1](https://github.com/POCOCZE/IncidentAnalyzerGo/compare/backend/self-hosted/v0.3.0...backend/self-hosted/v0.3.1) (2026-05-28)
+
+
+### Bug Fixes
+
+* :bug: Fixed wrong time convertion ([bab7096](https://github.com/POCOCZE/IncidentAnalyzerGo/commit/bab7096e4f7778fadc2ae9fb6f22cf649b938196))
+
 ## [0.3.0](https://github.com/POCOCZE/IncidentAnalyzerGo/compare/backend/self-hosted/v0.2.0...backend/self-hosted/v0.3.0) (2026-05-27)
 
 
