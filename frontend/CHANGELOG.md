@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.4.0](https://github.com/POCOCZE/IncidentAnalyzerGo/compare/frontend/v0.3.0...frontend/v0.4.0) (2026-05-28)
+
+
+### Features
+
+* :sparkles: Added indicator of unresolved incidents ([84307a4](https://github.com/POCOCZE/IncidentAnalyzerGo/commit/84307a43c15f19a85279f701827db655bfbfbb79))
+
+
+### Bug Fixes
+
+* :bug: Fixed visual bug ([e02b82d](https://github.com/POCOCZE/IncidentAnalyzerGo/commit/e02b82d056fd39b90fb173a527858740a1376b49))
+* :bug: Made stats text smaller ([16bd7e1](https://github.com/POCOCZE/IncidentAnalyzerGo/commit/16bd7e1f918ec59375fb19b2ce1c4673f9697405))
+
 ## [0.3.0](https://github.com/POCOCZE/IncidentAnalyzerGo/compare/frontend/v0.2.0...frontend/v0.3.0) (2026-05-28)
 
 
