@@ -109,12 +109,12 @@ export const IncidentReportCenter = () => {
     }
 
     return (
-        <div className="flex flex-col items-center grow rounded-xl h-[97vh] m-4 bg-base-300">
+        <div className="flex flex-col items-center grow rounded-xl h-[97vh] m-4 bg-base-200">
             <span className="flex bg-linear-to-r text-3xl font-bold p-2 from-[#3388ff] to-[#2f64b9] text-transparent bg-clip-text">Report</span>
             <div className="flex flex-col justify-start overflow-auto">
                 <div className="flex flex-col overflow-auto">
-                    <span className="text-xl font-semibold text-right mx-2">Preview</span>
-                    <pre className="text-xs bg-black text-base-100 p-4 rounded-xl overflow-auto">{JSON.stringify(report, null, 2)}</pre>
+                    <span className="text-xl text-base-content/90 font-semibold text-right mx-2">Preview</span>
+                    <pre className="text-xs bg-gray-200 dark:bg-black text-base-content/90 p-4 rounded-xl overflow-auto">{JSON.stringify(report, null, 2)}</pre>
                 </div>
                 <div className="m-2">
                     {DownloadReport()}

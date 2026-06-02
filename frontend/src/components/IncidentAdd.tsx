@@ -86,10 +86,10 @@ const IncidentAdd = () => {
     }
 
     return (
-        <div className="flex flex-col grow rounded-xl h-[97vh] m-4 bg-base-300">
+        <div className="flex flex-col grow rounded-xl h-[97vh] m-4 bg-base-200">
             <span className="flex text-3xl font-bold justify-center mt-4 bg-linear-to-r from-amber-600 to-yellow-400 text-transparent bg-clip-text">Add Incident</span>
             <RenderToast />
-            <fieldset className="fieldset border-base-300 rounded-box border p-4">
+            <fieldset className="fieldset border-base-200 rounded-box border p-4">
                 {/* <legend className="fieldset-legend">Page details</legend> */}
                 <div className="lg:flex md:flex justify-center">
                     <div className="flex flex-col md:px-2 lg:px-[8vw]">

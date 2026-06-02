@@ -20,7 +20,9 @@ export const OneButtonModal = ({buttonText, title, description, closeButtonText}
     return (
         <>
         {/* Open modal */}
-        <button className='btn btn-xs hover:btn-error btn-ghost mx-1' onClick={() => modalRef.current?.showModal()}>{buttonText}</button>
+        <div className='tooltip tooltip-bottom tooltip-info' data-tip='Delete'>
+            <button className='btn btn-xs hover:btn-error btn-ghost mx-1' onClick={() => modalRef.current?.showModal()}>{buttonText}</button>
+        </div>
         <dialog ref={modalRef} className="modal modal-bottom sm:modal-middle">
             <div className="modal-box">
                 <span className="font-bold text-xl">{title}</span>
@@ -183,11 +185,13 @@ export const IncidentEditModal = ({editIcon, incidentID}: IncidentEditProps) => 
     return (
         <>
         {RenderToast()}
-        <button className='btn btn-xs btn-ghost hover:bg-base-100 hover:border-base-content active:btn-warning' onClick={() => {
-            modalRef.current?.showModal()
-            fetchIncidentByID()
-            {RenderLoading()}
-        }}>{editIcon}</button>
+        <div className='tooltip tooltip-bottom tooltip-info' data-tip='Edit'>
+            <button className='btn btn-xs btn-ghost hover:bg-base-100 hover:border-base-content active:btn-warning' onClick={() => {
+                modalRef.current?.showModal()
+                fetchIncidentByID()
+                {RenderLoading()}
+            }}>{editIcon}</button>
+        </div>
         <dialog ref={modalRef} className="modal modal-bottom sm:modal-middle">
             <div className="modal-box w-fit bg-base-300">
                 <div className='m-1'>
