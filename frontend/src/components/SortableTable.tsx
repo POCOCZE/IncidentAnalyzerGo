@@ -176,7 +176,7 @@ const SortableTable = ({columns, data, onDelete, onError, filter, resolvedFilter
             const time = secondsToTime(timeDiff)
             const browserTime = UTCToBrowserTime(row.resolved_at)
             return (
-                <div className='flex flex-col'>
+                <div className='flex flex-col justify-center items-end h-8'>
                     <span>Resolved in {time}</span>
                     <span className='text-xs text-base-content/70'>Ended: {browserTime}</span>
                 </div>
@@ -184,8 +184,8 @@ const SortableTable = ({columns, data, onDelete, onError, filter, resolvedFilter
         } else {
             const browserTime = UTCToBrowserTime(row.started_at)
             return (
-                <div className='flex flex-col'>
-                    <span>Pending...</span>
+                <div className='flex flex-col justify-center items-end h-8'>
+                    <span>Pending ...</span>
                     <span className='text-xs text-base-content/70'>Started: {browserTime}</span>
                 </div>
             )
@@ -195,11 +195,13 @@ const SortableTable = ({columns, data, onDelete, onError, filter, resolvedFilter
     const renderTableButtons = (row: any) => {
         if (row.id === currentHoveredRowID) {
             return (
-                <>
+                <div className='flex justify-end items-center h-8'>
                     <IncidentEdit incidentID={row.id} setError={onError} />
                     {renderDeleteButton(row.id)}
-                </>
+                </div>
             )
+        } else {
+            return setupMessage(row)
         }
     }
 
@@ -216,7 +218,7 @@ const SortableTable = ({columns, data, onDelete, onError, filter, resolvedFilter
             <thead>
                 <tr>
                 { columns.map(col => (
-                    <th key={col.key} onClick={() => handleSort(col.key)} className={`cursor-pointer select-none ${col.key === 'other' && 'w-28'}`}>
+                    <th key={col.key} onClick={() => handleSort(col.key)} className={`cursor-pointer select-none ${col.key === 'new_message' && 'w-50'} ${col.key === 'severity' && 'text-center'}`}>
                         {col.label}
                         {sortKey === col.key && (sortDirection === 'asc' ? ' ↑' : ' ↓')}
                     </th>
@@ -225,14 +227,14 @@ const SortableTable = ({columns, data, onDelete, onError, filter, resolvedFilter
             </thead>
             <tbody>
                 {sortedData.map((row, index) => (
-                <tr className={`${row.id === currentHoveredRowID && 'bg-base-300'}`} key={row.id || index}>
+                <tr className={`${row.id === currentHoveredRowID && 'bg-base-200'}`} key={row.id || index}>
                     {columns.map(col => (
                         <td key={col.key} onMouseEnter={() => setcurrentHoveredRowID(row.id)} onMouseLeave={() => setcurrentHoveredRowID(null)}>
                             {col.render ? col.render(row[col.key]) : row[col.key]}
                             {col.key === 'resolved_at' && row[col.key] === null && 'Unresolved'}
-                            {col.key === 'new_message' && setupMessage(row)}
+                            {col.key === 'new_message' && renderTableButtons(row)}
+                            {/* {col.key === 'new_message' && setupMessage(row)} */}
                             {col.key === 'is_resolved' && renderIsResolved(row[col.key])}
-                            {col.key === 'other' && renderTableButtons(row)}
                         </td>
                     ))}
                 </tr>
