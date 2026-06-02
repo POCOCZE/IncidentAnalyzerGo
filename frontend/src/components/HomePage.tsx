@@ -3,7 +3,7 @@ import { ExportIncidents, IncidentListProvider } from './IncidentList'
 
 const HomePage = () => {
     return (
-        <div className="flex flex-col grow rounded-xl justify-start h-[97vh] m-4 bg-base-300">
+        <div className="flex flex-col grow rounded-xl justify-start h-[97vh] m-4 bg-base-200">
             <span className='text-center text-4xl mt-4 font-bold bg-linear-to-r from-blue-500 to-cyan-400 text-transparent bg-clip-text'>Incident Analyzer</span>
             <div className='flex flex-col ml-20 m-2'>
                 <div className='flex flex-col mt-6'>
@@ -13,19 +13,19 @@ const HomePage = () => {
                 <div className='flex flex-col mt-12'>
                     <span className='text-xl font-bold'>Quick actions</span>
                     <div className='flex mt-2'>
-                        <div className="flex flex-col p-4 m-4 bg-base-200 rounded-xl shadow h-fit">
+                        <div className="flex flex-col shadow-xl p-4 m-4 bg-base-300 rounded-xl h-fit">
                         <IncidentReportProvider>
                             <IncidentsUnresolved />
                         </IncidentReportProvider>
                         </div>
                     </div>
                     <div className='flex mt-2'>
-                        <div className="flex flex-col p-4 m-4 bg-base-200 rounded-xl shadow h-fit">
+                        <div className="flex flex-col shadow-xl p-4 m-4 bg-base-300 rounded-xl h-fit">
                             <IncidentReportProvider>
                                 <DownloadReport />
                             </IncidentReportProvider>
                         </div>
-                        <div className="flex flex-col p-4 m-4 bg-base-200 rounded-xl shadow h-fit">
+                        <div className="flex flex-col shadow-xl p-4 m-4 bg-base-300 rounded-xl h-fit">
                             <IncidentListProvider>
                                 <ExportIncidents />
                             </IncidentListProvider>

@@ -91,7 +91,7 @@ export const ExportIncidents = () => {
 
 export const IncidentListCenter = () => {
     const { incidents, setIncidents, setCurrentIncCount, filter, resolvedFilter, loading, error, setError } = useIncidentList()
-    const [searchBg, setSearchBg] = useState<string>('bg-base-200')
+    const [searchBg, setSearchBg] = useState<string>('bg-base-300')
     const [searchKeyword, setSearchKeyword] = useState<string>('')
     
     if (loading) {
@@ -120,10 +120,10 @@ export const IncidentListCenter = () => {
     }
 
     const severityColor: Record<string, string> = {
-        critical: 'badge border-base-content bg-error/80 text-black dark:text-white font-semibold',
-        high: 'badge border-base-content bg-warning text-black dark:text-white font-semibold',
-        medium: 'badge border-base-content bg-orange-400 text-black dark:text-white font-semibold',
-        low: 'badge border-base-content bg-yellow-500 text-black dark:text-white font-semibold',
+        critical: 'badge badge-sm border-base-content dark:border-black bg-error/80 text-base-content dark:text-black font-semibold',
+        high: 'badge badge-sm border-base-content dark:border-black bg-warning text-base-content dark:text-black font-semibold',
+        medium: 'badge badge-sm border-base-content dark:border-black bg-orange-400 text-base-content dark:text-black font-semibold',
+        low: 'badge badge-sm border-base-content dark:border-black bg-yellow-500 text-base-content dark:text-black font-semibold',
     };
 
     const severityLabel: Record<string, string> = {
@@ -139,28 +139,28 @@ export const IncidentListCenter = () => {
             render: (value: string) => <span className='font-semibold'>{value}</span>},
         { key: 'title', label: 'Title'},
         { key: 'severity', label: 'Severity',
-            render: (value: string) => <span className={`text-xs ${severityColor[value]}`}>{severityLabel[value]}</span>},
+            render: (value: string) => <div className='flex justify-center'><span className={`text-xs ${severityColor[value]}`}>{severityLabel[value]}</span></div>},
         { key: 'service_name', label: 'Service name'},
-        { key: 'new_message', label: 'Message'},
-        { key: 'other', label: ''}
+        { key: 'new_message', label: ''}
+        // { key: 'other', label: ''}
     ]
 
     const searchIncidentsField = () => {
         return (
-            <label className={`input rounded-2xl w-60 border-base-content/50 ${searchBg}`} onMouseEnter={() => setSearchBg('bg-base-100')} onMouseLeave={() => setSearchBg('bg-base-200')}>
+            <label className={`input rounded-2xl shadow-2xl border-none w-60 ${searchBg}`} onMouseEnter={() => setSearchBg('bg-base-100')} onMouseLeave={() => setSearchBg('bg-base-300')}>
                 <svg className="h-[1em] opacity-50" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><g strokeLinejoin="round" strokeLinecap="round" strokeWidth="2.5" fill="none" stroke="currentColor"><circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.3-4.3"></path></g></svg>
-                <input type="search" placeholder="Search incidents" value={searchKeyword} onChange={(e) => setSearchKeyword(e.currentTarget.value)} />
+                <input type="search" placeholder="Search incident IDs" value={searchKeyword} onChange={(e) => setSearchKeyword(e.currentTarget.value)} />
             </label>
         )
     }
 
     return (
-        <div className='flex flex-col px-3 pt-3 grow rounded-xl h-[97vh] m-4 bg-base-300 shadow'>
+        <div className='flex flex-col px-3 pt-3 grow rounded-xl h-[97vh] m-4 bg-base-200 shadow'>
             <span className='flex text-3xl font-bold justify-center bg-linear-to-r from bg-orange-500 to-yellow-500 bg-clip-text text-transparent'>Incident list</span>
             <div className='flex justify-end m-1'>
                 {searchIncidentsField()}
             </div>
-            <div className='rounded-box border border-base-content/50 bg-base-200 m-1 mb-4 overflow-auto max-w-[80vw]'>
+            <div className='rounded-box shadow-md bg-base-300 m-1 mb-4 overflow-auto max-w-[80vw]'>
                 {incidents ?
                 <SortableTable columns={columns} data={incidents} onDelete={setIncidents} onError={setError} filter={filter} resolvedFilter={resolvedFilter} setCurrentIncCount={setCurrentIncCount} searchKeyword={searchKeyword}/>
                 : emptyIncidentsGuard()}
@@ -235,9 +235,9 @@ export const IncidentListSidebar = () => {
     }
 
     return (
-        <div className='flex flex-col bg-base-300 rounded-xl my-4 ml-2 mr-4 h-[97vh] w-60 items-center shadow'>
+        <div className='flex flex-col bg-base-200 rounded-xl my-4 ml-2 mr-4 h-[97vh] w-60 items-center shadow'>
             <div className='flex flex-col'>
-                <div className="flex flex-col stats stats-vertical bg-base-200 m-4 shadow">
+                <div className="flex flex-col stats stats-vertical bg-base-300 m-4 shadow">
                     <div className="stat">
                         <div className="stat-title">Incident Count</div>
                         {handleIncidentCount()}
@@ -247,7 +247,7 @@ export const IncidentListSidebar = () => {
                         <IncidentReportSidebar />
                     </IncidentReportProvider>
                 </div>
-                <div className='flex flex-col rounded-xl shadow mx-4 bg-base-200'>
+                <div className='flex flex-col rounded-xl shadow mx-4 bg-base-300'>
                     <span className='text-xl font-bold text-center mt-2'>Filters</span>
                     {severityFilter()}
                     {showIncidentsFilter()}
