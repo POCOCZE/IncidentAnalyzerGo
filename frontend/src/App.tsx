@@ -5,6 +5,7 @@ import IncidentAdd from './components/IncidentAdd';
 import { IncidentReportProvider, IncidentReportCenter } from './components/IncidentReport';
 import EnableMenu from './components/EnableMenu';
 import HomePage from './components/HomePage';
+import { ChangeTheme } from './components/ChangeTheme';
 
 const App = () => {
     const [selectedMenu, setSelectedMenu] = useState<string>('Home')
@@ -14,7 +15,10 @@ const App = () => {
             {/* Left side */}
             <div className='flex flex-col justify-between items-center rounded-xl ml-4 my-4 h-[97vh]'>
                 <EnableMenu selected={selectedMenu} onSelect={setSelectedMenu} />
-                <HealthStatus />
+                <div>
+                    <ChangeTheme />
+                    <HealthStatus />
+                </div>
             </div>
             {/* Center */}
             { selectedMenu === 'Home' && <HomePage />}
