@@ -31,7 +31,6 @@ const App = () => {
             { selectedMenu === 'Report' &&
                 <IncidentReportProvider>
                     <IncidentReportCenter />
-                    {/* <IncidentReportSidebar /> */}
                 </IncidentReportProvider>}
         </div>
     )
