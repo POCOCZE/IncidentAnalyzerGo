@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.5.1](https://github.com/POCOCZE/IncidentAnalyzerGo/compare/frontend/v0.5.0...frontend/v0.5.1) (2026-06-02)
+
+
+### Bug Fixes
+
+* :lipstick: Updated dark theme ([bf5a742](https://github.com/POCOCZE/IncidentAnalyzerGo/commit/bf5a7428b851bfac43b1274ef98fcf1bc983abf8))
+
 ## [0.5.0](https://github.com/POCOCZE/IncidentAnalyzerGo/compare/frontend/v0.4.0...frontend/v0.5.0) (2026-06-02)
 
 
