@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.5.0](https://github.com/POCOCZE/IncidentAnalyzerGo/compare/frontend/v0.4.0...frontend/v0.5.0) (2026-06-02)
+
+
+### Features
+
+* :sparkles: Added change theme button ([0701e3d](https://github.com/POCOCZE/IncidentAnalyzerGo/commit/0701e3df1f793399297b8beca6a5939cc255f8fb))
+* :sparkles: Added change theme button ([e306cbe](https://github.com/POCOCZE/IncidentAnalyzerGo/commit/e306cbe89db3ce426162a5b7e2fdee6b60b926b3))
+
 ## [0.4.0](https://github.com/POCOCZE/IncidentAnalyzerGo/compare/frontend/v0.3.0...frontend/v0.4.0) (2026-05-28)
 
 
