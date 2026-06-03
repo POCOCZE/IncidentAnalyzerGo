@@ -8,8 +8,8 @@ export const ChangeTheme = () => {
     // const themes = ['light', 'dark', 'emerald']
 
     // Those names must match the names in the "index.css" file.
-    const lightThemeName = 'cupcake'
-    const darkThemeName = 'aqua'
+    const lightThemeName = 'my_light'
+    const darkThemeName = 'my_dark'
 
     useEffect(() => {
         document.documentElement.setAttribute(
