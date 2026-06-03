@@ -15,5 +15,4 @@ type Incident struct {
 	ServiceName string
 	StartedAt   pgtype.Timestamptz
 	ResolvedAt  pgtype.Timestamptz
-	IsResolved  pgtype.Bool
 }

@@ -69,7 +69,7 @@ UPDATE incidents
     started_at = $5,
     resolved_at = $6
 WHERE id = $7
-RETURNING id, title, severity, service_name, started_at, resolved_at, is_resolved
+RETURNING id, title, severity, service_name, started_at, resolved_at
 `
 
 type EditParams struct {
@@ -96,7 +96,7 @@ func (q *Queries) Edit(ctx context.Context, arg EditParams) error {
 }
 
 const getAll = `-- name: GetAll :many
-SELECT id, title, severity, service_name, started_at, resolved_at, is_resolved FROM incidents
+SELECT id, title, severity, service_name, started_at, resolved_at FROM incidents
 `
 
 func (q *Queries) GetAll(ctx context.Context) ([]Incident, error) {
@@ -115,7 +115,6 @@ func (q *Queries) GetAll(ctx context.Context) ([]Incident, error) {
 			&i.ServiceName,
 			&i.StartedAt,
 			&i.ResolvedAt,
-			&i.IsResolved,
 		); err != nil {
 			return nil, err
 		}
@@ -128,7 +127,7 @@ func (q *Queries) GetAll(ctx context.Context) ([]Incident, error) {
 }
 
 const getByID = `-- name: GetByID :one
-SELECT id, title, severity, service_name, started_at, resolved_at, is_resolved FROM incidents
+SELECT id, title, severity, service_name, started_at, resolved_at FROM incidents
 WHERE id = $1
 `
 
@@ -142,7 +141,6 @@ func (q *Queries) GetByID(ctx context.Context, id string) (Incident, error) {
 		&i.ServiceName,
 		&i.StartedAt,
 		&i.ResolvedAt,
-		&i.IsResolved,
 	)
 	return i, err
 }

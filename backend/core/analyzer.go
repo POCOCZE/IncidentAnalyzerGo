@@ -69,26 +69,26 @@ func (r *IncidentReport) CalcMTTRSec(durations map[string]IncidentDuration) erro
     return nil
 }
 
-// func calcIncidentDuration(incident Incident) map[string]IncidentDuration {
-//     // , allIncidentsDuration map[string]float64 -> as output
-//     // Calculate incident duration for all incidents
-//     // Unresolved incidents will have 0 seconds duration, resolved one gets calculated
+func calcIncidentDuration(incident Incident) map[string]IncidentDuration {
+    // , allIncidentsDuration map[string]float64 -> as output
+    // Calculate incident duration for all incidents
+    // Unresolved incidents will have 0 seconds duration, resolved one gets calculated
 
-//     var durationSec float64
-//     if incident.ResolvedAt != nil {
-//         startedAt := incident.StartedAt
-//         resolvedAt := incident.ResolvedAt
-//         durationSec = resolvedAt.Sub(*startedAt).Seconds()
-//     }
+    var durationSec float64
+    if incident.ResolvedAt != nil {
+        startedAt := incident.StartedAt
+        resolvedAt := incident.ResolvedAt
+        durationSec = resolvedAt.Sub(*startedAt).Seconds()
+    }
 
-//     hms := time.Duration(durationSec) * time.Second
-//     var durations map[string]IncidentDuration
-//     durations[incident.ID] = IncidentDuration{
-//         Seconds: durationSec,
-//         HMSFormat: hms.String(),
-//     }
-//     return durations
-// }
+    hms := time.Duration(durationSec) * time.Second
+    var durations map[string]IncidentDuration
+    durations[incident.ID] = IncidentDuration{
+        Seconds: durationSec,
+        HMSFormat: hms.String(),
+    }
+    return durations
+}
 
 func NewIncidentReport() *IncidentReport {
     // This is constructor function: Prepares structure for report
@@ -114,7 +114,7 @@ func BuildReport(incidents []Incident) (*IncidentReport, error) {
         }
 
         // --- Calculate incident duration and group incidents --- //
-        // durations := calcIncidentDuration(incident)
+        durations = calcIncidentDuration(incident)
         report.groupIncidentsByService(incident)
         report.groupIncidentsBySeverity(incident)
         report.groupIncidentsByID(incident)
