@@ -2,17 +2,6 @@ package core
 
 import "time"
 
-func IsValidTime(t *time.Time) bool {
-	if t == nil || t.IsZero() {
-		return false
-	}
-	return true
-}
-
-func TimeToString(t *time.Time) string {
-	return t.Format(time.RFC3339)
-}
-
 func StringToTime(input string) (*time.Time, error) {
 	output, err := time.Parse(time.RFC3339, input)
 	if err != nil {

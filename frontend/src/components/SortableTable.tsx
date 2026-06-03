@@ -205,11 +205,11 @@ const SortableTable = ({columns, data, onDelete, onError, filter, resolvedFilter
         }
     }
 
-    const renderIsResolved = (colVal: any) => {
-        if (colVal) {
-            return '✓'
-        } else {
+    const renderIsResolved = (resolved_at: any) => {
+        if (resolved_at === null) {
             return '✗'
+        } else {
+            return '✓'
         }
     }
 
@@ -234,7 +234,7 @@ const SortableTable = ({columns, data, onDelete, onError, filter, resolvedFilter
                             {col.key === 'resolved_at' && row[col.key] === null && 'Unresolved'}
                             {col.key === 'new_message' && renderTableButtons(row)}
                             {/* {col.key === 'new_message' && setupMessage(row)} */}
-                            {col.key === 'is_resolved' && renderIsResolved(row[col.key])}
+                            {col.key === 'is_resolved' && renderIsResolved(row.resolved_at)}
                         </td>
                     ))}
                 </tr>

@@ -23,3 +23,4 @@ require (
 )
 
 replace github.com/pococze/incidentanalyzergo/backend/core => ../core
+replace github.com/pococze/incidentanalyzergo/backend/self-hosted/database => ./database
