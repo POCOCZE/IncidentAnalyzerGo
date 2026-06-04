@@ -45,6 +45,8 @@ export const IncidentEditModal = ({editIcon, incidentID}: IncidentEditProps) => 
     const [loading, setLoading] = useState<boolean>(true)
     const [error, setError] = useState<string | null>(null)
     const [isSuccess, setIsSuccess] = useState<boolean>(false)
+    const [isDataSubmit, setIsDataSubmit] = useState<boolean>(false)
+    const [infoMessage, setInfoMessage] = useState<string>('')
     const [submitBtnBg, setSubmitBtnBg] = useState<string>('btn-neutral')
 
     const [id, setID] = useState<string>('')
@@ -119,9 +121,12 @@ export const IncidentEditModal = ({editIcon, incidentID}: IncidentEditProps) => 
                 body: JSON.stringify({id: id, title: title, severity: severity, service_name: serviceName, started_at: startedAt, resolved_at: await timeStringToUTC(resolvedAt)})
             })
             if (!response?.ok) {
-                const errorData = await response.json()
+                const errorData = await response?.json()
                 console.log("Error response", errorData)
                 throw new Error(`- ${errorData.error}`)
+            } else {
+                const data = await response?.json()
+                setInfoMessage(data.info)
             }
             setIsSuccess(true)
         } catch (err) {
@@ -138,9 +143,16 @@ export const IncidentEditModal = ({editIcon, incidentID}: IncidentEditProps) => 
         }
         if (isSuccess) {
             return (
-                <ToastNotification duration={5000} message='Successfully edited new incident' toastLevel='alert-success' toastPos='toast-top toast-right' />
+                <ToastNotification duration={5000} message='Successfully changed incident' toastLevel='alert-success' toastPos='toast-top toast-right' />
             )
         }
+        if (infoMessage !== '') {
+            return (
+                <ToastNotification duration={5000} message={`Info - ${infoMessage}`} toastLevel='alert-info' toastPos='toast-top toast-right' />
+            )
+        }
+        // After rendering a notification - reset the button
+        setIsDataSubmit(false)
     }
 
     const RenderResolvedAtField = () => {
@@ -181,7 +193,8 @@ export const IncidentEditModal = ({editIcon, incidentID}: IncidentEditProps) => 
 
     return (
         <>
-        {RenderToast()}
+        {/* Todo: This does not seem to show toasts */}
+        {isDataSubmit === true && RenderToast()}
         <div className='tooltip tooltip-bottom tooltip-info' data-tip='Edit'>
             <button className='btn btn-xs btn-ghost hover:bg-base-100 hover:border-base-content active:btn-warning' onClick={() => {
                 modalRef.current?.showModal()
@@ -234,6 +247,7 @@ export const IncidentEditModal = ({editIcon, incidentID}: IncidentEditProps) => 
                     <div className="flex flex-col items-center">
                         <button onClick={() => {
                             patchIncident()
+                            setIsDataSubmit(true)
                             modalRef.current?.close()
                         }} className={`btn ${submitBtnBg} border-base-content mt-2 px-6`} onMouseEnter={() => setSubmitBtnBg("btn-info")} onMouseLeave={() => setSubmitBtnBg("btn-neutral")}>Edit</button>
                     </div>
