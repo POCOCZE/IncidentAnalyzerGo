@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log"
 	"time"
 
 	"github.com/jackc/pgx/v5"
@@ -114,7 +115,7 @@ func (p *PostgresStore) Add(ctx context.Context, incident core.Incident) error {
 		}
 	}
 	if inc.ID == incident.ID {
-		return fmt.Errorf("WARN: incident %q already exist\n", incident.ID)
+		log.Printf("WARN: incident %q already exist\n", incident.ID)
 	}
 	if err != nil {
 		return err
