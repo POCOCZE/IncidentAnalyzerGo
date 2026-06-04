@@ -13,6 +13,8 @@ import ToastNotification from "./ToastNotification";
 
 const IncidentAdd = () => {
     const [isSuccess, setIsSuccess] = useState<boolean>(false)
+    const [isDataSubmit, setIsDataSubmit] = useState<boolean>(false)
+    const [infoMessage, setInfoMessage] = useState<string>('')
     const [error, setError] = useState<string | null>(null)
 
     const [id, setID] = useState<string>('')
@@ -55,10 +57,13 @@ const IncidentAdd = () => {
                     const errorData = await response?.json()
                     console.log('Error response', errorData)
                     throw new Error(`- ${errorData.error}`)
+                } else {
+                    const data = await response?.json()
+                    console.log(data)
+                    setInfoMessage(data.info)
                 }
             } else {
                 const contents = await incidentsFile.text()
-                console.log(contents)
                 const response = await fetch(`http://localhost:8080/incidents`, {
                     method: 'POST',
                     headers: {"Content-Type": "application/json"},
@@ -68,6 +73,10 @@ const IncidentAdd = () => {
                     const errorData = await response?.json()
                     console.log('Error response', errorData)
                     throw new Error(`- ${errorData.error}`)
+                } else {
+                    const data = await response?.json()
+                    console.log(data)
+                    setInfoMessage(data.info)
                 }
             }
             setIsSuccess(true)
@@ -80,18 +89,20 @@ const IncidentAdd = () => {
         if (error) {
             return <ToastNotification duration={10000} message={`Error ${error}`} toastLevel='alert-error' toastPos='toast-top toast-right'/>
         }
-        if (isSuccess) {
-            return <ToastNotification duration={5000} message="Successfully added new incident" toastLevel="alert-success" toastPos="toast-top toast-end" />
+        if (infoMessage !== '') {
+            return <ToastNotification duration={5000} message={`Info - ${infoMessage}`} toastLevel="alert-info" toastPos="toast-top toast-end" />
         }
+        // After rendering a notification - reset the boolean
+        setIsDataSubmit(false)
     }
 
     const minWidthFields = 'flex flex-col'
-    const inputWidthFields = 'mb-4 lg:min-w-[50vw]'
+    const inputWidthFields = 'mb-4 lg:min-w-[50vw] md:min-w-[50vw] sm:min-w-[50vw] min-w-[70vw]'
 
     return (
         <div className="flex flex-col grow rounded-lg h-[97vh] m-4 bg-base-200 border border-base-content/15">
             <span className="flex text-3xl font-bold justify-center mt-4 bg-linear-to-r from-amber-600 to-yellow-400 text-transparent bg-clip-text">Add Incident</span>
-            <RenderToast />
+            {isDataSubmit === true && RenderToast()}
             <fieldset className="fieldset border-base-200 rounded-box border p-4">
                 {/* <legend className="fieldset-legend">Page details</legend> */}
                 <div className="flex flex-col items-center">
@@ -138,7 +149,10 @@ const IncidentAdd = () => {
                         const file = e.currentTarget.files?.[0] ?? null
                         setIncidentsFile(file)
                     }} />
-                    <button onClick={postIncident} className="btn btn-neutral bg-base-100 border-base-content/15 active:bg-success active:text-base-content mt-6 lg:w-40">Submit</button>
+                    <button onClick={() => {
+                        postIncident()
+                        setIsDataSubmit(true)
+                    }} className="btn btn-neutral bg-base-100 border-base-content/15 active:text-base-content mt-6 lg:w-40">Submit</button>
                 </div>
             </fieldset>
         </div>
