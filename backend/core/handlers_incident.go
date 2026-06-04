@@ -1,14 +1,13 @@
 package core
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
 )
 
-func addListHandler(ctx context.Context, store IncidentStorage) http.HandlerFunc {
+func addListHandler(store IncidentStorage) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var incidents IncidentsFile
 		err := json.NewDecoder(r.Body).Decode(&incidents)
@@ -26,7 +25,7 @@ func addListHandler(ctx context.Context, store IncidentStorage) http.HandlerFunc
 			encodeJSON(w, map[string]string{"error": "no incidents provided. did you specified correct endpoint?"}, "")
 			log.Printf("ERR: User tried to write 0 incidents. Maybe he specificed bad endpoint.")
 		}
-		err = store.AddList(ctx, incidents.Incidents)
+		err = store.AddList(r.Context(), incidents.Incidents)
 		if err != nil {
 			w.WriteHeader(http.StatusBadRequest)
 			encodeJSON(w, map[string]string{"error": fmt.Sprintf("%s", err)}, "")
@@ -39,7 +38,7 @@ func addListHandler(ctx context.Context, store IncidentStorage) http.HandlerFunc
 	}
 }
 
-func addHandler(ctx context.Context, store IncidentStorage) http.HandlerFunc {
+func addHandler(store IncidentStorage) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var incident Incident
 		err := json.NewDecoder(r.Body).Decode(&incident)
@@ -52,7 +51,7 @@ func addHandler(ctx context.Context, store IncidentStorage) http.HandlerFunc {
 			return
 		}
 
-		err = store.Add(ctx, incident)
+		err = store.Add(r.Context(), incident)
 		if err != nil {
 			w.WriteHeader(http.StatusBadRequest)
 			encodeJSON(w, map[string]string{"error": fmt.Sprintf("invalid structure: %s", err)}, "")
@@ -66,7 +65,7 @@ func addHandler(ctx context.Context, store IncidentStorage) http.HandlerFunc {
 	}
 }
 
-func editHandler(ctx context.Context, store IncidentStorage) http.HandlerFunc {
+func editHandler(store IncidentStorage) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Add("Content-Type", "application/json")
 		var incident Incident
@@ -77,7 +76,7 @@ func editHandler(ctx context.Context, store IncidentStorage) http.HandlerFunc {
 			encodeJSON(w, err, "")
 			log.Printf("ERR: %s", err)
 		}
-		err = store.Edit(ctx, id, incident)
+		err = store.Edit(r.Context(), id, incident)
 		if err != nil {
 			w.WriteHeader(http.StatusBadRequest)
 			encodeJSON(w, err, "")
@@ -90,12 +89,12 @@ func editHandler(ctx context.Context, store IncidentStorage) http.HandlerFunc {
 	}
 }
 
-func getByIDHandler(ctx context.Context, store IncidentStorage) http.HandlerFunc {
+func getByIDHandler(store IncidentStorage) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Add("Content-Type", "application/json")
 		incidentID := r.PathValue("id")
 
-		inc, err := store.GetByID(ctx, incidentID)
+		inc, err := store.GetByID(r.Context(), incidentID)
 		if err != nil {
 			w.WriteHeader(http.StatusBadRequest)
 			errMessage := map[string]error{"error": err}
@@ -109,11 +108,11 @@ func getByIDHandler(ctx context.Context, store IncidentStorage) http.HandlerFunc
 	}
 }
 
-func getAllHandler(ctx context.Context, store IncidentStorage) http.HandlerFunc{
+func getAllHandler(store IncidentStorage) http.HandlerFunc{
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 
-		incidents, err := store.GetAll(ctx)
+		incidents, err := store.GetAll(r.Context())
 		if err != nil {
 			w.WriteHeader(http.StatusBadRequest)
 			encodeJSON(w, map[string]error{"error": err}, "")
@@ -124,14 +123,14 @@ func getAllHandler(ctx context.Context, store IncidentStorage) http.HandlerFunc{
 	}
 }
 
-func deleteByIDHandler(ctx context.Context, store IncidentStorage) http.HandlerFunc{
+func deleteByIDHandler(store IncidentStorage) http.HandlerFunc{
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Add("content-Type", "application/json")
 		id := r.PathValue("id")
 
 		// If id gathered from path actually exist
 		// If not, return error 404
-		err := store.DeleteByID(ctx, id)
+		err := store.DeleteByID(r.Context(), id)
 		if err != nil {
 			w.WriteHeader(http.StatusNotFound)
 			encodeJSON(w, map[string]string{"warn": fmt.Sprintf("incident ID %s not found", id)}, "")
@@ -145,10 +144,10 @@ func deleteByIDHandler(ctx context.Context, store IncidentStorage) http.HandlerF
 	}
 }
 
-func deleteAllHandler(ctx context.Context, store IncidentStorage) http.HandlerFunc {
+func deleteAllHandler(store IncidentStorage) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Add("Content-Type", "application/json")
-		err := store.DeleteAll(ctx)
+		err := store.DeleteAll(r.Context())
 		if err != nil {
 			w.WriteHeader(http.StatusBadRequest)
 			encodeJSON(w, map[string]string{"error": fmt.Sprintf("%s", err)}, "")

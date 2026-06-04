@@ -19,16 +19,16 @@ func healthHandler(w http.ResponseWriter, r *http.Request) {
 func StartServer(ctx context.Context, port string, store IncidentStorage) {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/healthz", healthHandler)
-	mux.HandleFunc("GET /report", getReportHandler(ctx, store))
-	mux.HandleFunc("GET /incidents", getAllHandler(ctx, store))
-	mux.HandleFunc("POST /incidents", addListHandler(ctx, store))
-	mux.HandleFunc("POST /incident", addHandler(ctx, store))
-	mux.HandleFunc("PATCH /incident/{id}", editHandler(ctx, store))
-	mux.HandleFunc("GET /incidents/{id}", getByIDHandler(ctx, store))
-	mux.HandleFunc("DELETE /incidents/{id}", deleteByIDHandler(ctx, store))
+	mux.HandleFunc("GET /report", getReportHandler(store))
+	mux.HandleFunc("GET /incidents", getAllHandler(store))
+	mux.HandleFunc("POST /incidents", addListHandler(store))
+	mux.HandleFunc("POST /incident", addHandler(store))
+	mux.HandleFunc("PATCH /incident/{id}", editHandler(store))
+	mux.HandleFunc("GET /incidents/{id}", getByIDHandler(store))
+	mux.HandleFunc("DELETE /incidents/{id}", deleteByIDHandler(store))
 
 	// !This removes all incidents forever! For testing.
-	mux.HandleFunc("DELETE /delete-all-incidents-forever", deleteAllHandler(ctx, store))
+	mux.HandleFunc("DELETE /delete-all-incidents-forever", deleteAllHandler(store))
 
 	handler := corsMiddleware(mux)
 	log.Printf("INFO: Server listening on port :%s", port)
@@ -43,7 +43,7 @@ func encodeJSON(w http.ResponseWriter, content any, errMessage string) {
 		// If custom error message variable is empty, use default
 		errMessage = "Error encoding response"
 	}
-	
+
 	err := json.NewEncoder(w).Encode(content)
 	if err != nil {
 		log.Fatalf("%s: %s", errMessage, err)

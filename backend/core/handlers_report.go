@@ -1,19 +1,18 @@
 package core
 
 import (
-	"context"
 	"fmt"
 	"log"
 	"net/http"
 )
 
-func getReportHandler(ctx context.Context, store IncidentStorage) http.HandlerFunc {
+func getReportHandler(store IncidentStorage) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		severity := r.URL.Query().Get("severity")
 		service := r.URL.Query().Get("service")
 		id := r.URL.Query().Get("id")
 		w.Header().Add("Content-Type", "application/json")
-		incidents, err := store.GetAll(ctx)
+		incidents, err := store.GetAll(r.Context())
 		if err != nil {
 			w.WriteHeader(http.StatusBadRequest)
 			encodeJSON(w, map[string]string{"error": fmt.Sprintf("%s", err)}, "")

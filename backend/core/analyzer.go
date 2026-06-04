@@ -69,7 +69,7 @@ func (r *IncidentReport) CalcMTTRSec(durations map[string]IncidentDuration) erro
     return nil
 }
 
-func calcIncidentDuration(incident Incident) map[string]IncidentDuration {
+func calcIncidentDuration(durations map[string]IncidentDuration, incident Incident) {
     // , allIncidentsDuration map[string]float64 -> as output
     // Calculate incident duration for all incidents
     // Unresolved incidents will have 0 seconds duration, resolved one gets calculated
@@ -82,12 +82,10 @@ func calcIncidentDuration(incident Incident) map[string]IncidentDuration {
     }
 
     hms := time.Duration(durationSec) * time.Second
-    var durations map[string]IncidentDuration
     durations[incident.ID] = IncidentDuration{
         Seconds: durationSec,
         HMSFormat: hms.String(),
     }
-    return durations
 }
 
 func NewIncidentReport() *IncidentReport {
@@ -114,7 +112,7 @@ func BuildReport(incidents []Incident) (*IncidentReport, error) {
         }
 
         // --- Calculate incident duration and group incidents --- //
-        durations = calcIncidentDuration(incident)
+        calcIncidentDuration(durations, incident)
         report.groupIncidentsByService(incident)
         report.groupIncidentsBySeverity(incident)
         report.groupIncidentsByID(incident)

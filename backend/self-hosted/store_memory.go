@@ -46,7 +46,7 @@ func (m *MemoryStore) Add(ctx context.Context, incident core.Incident) error {
 			return fmt.Errorf("error: incident already exist")
 		}
 	}
-	
+
 	// * This will be removed in the future
 	// Check if time is defined (resolvedAt can be null) and convert to UTC if needed
 	if incident.StartedAt.IsZero() {

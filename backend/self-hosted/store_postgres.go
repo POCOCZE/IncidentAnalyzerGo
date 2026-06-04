@@ -2,9 +2,11 @@ package main
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"time"
 
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jackc/pgx/v5/pgxpool"
 	_ "github.com/jackc/pgx/v5/stdlib"
@@ -35,7 +37,7 @@ func NewPostgresStore(ctx context.Context, connString string) (*PostgresStore, e
 }
 
 func timeToPgTimestamptz(t *time.Time) pgtype.Timestamptz {
-	if t.IsZero() {
+	if t == nil || t.IsZero() {
 		return pgtype.Timestamptz{
 			Time: time.Time{},
 			InfinityModifier: 0,
@@ -57,8 +59,8 @@ func timeToPgTimestamptz(t *time.Time) pgtype.Timestamptz {
 // }
 
 func pgTimestamptzToTime(pgTime pgtype.Timestamptz) *time.Time {
-	if !pgTime.Valid {
-		return &time.Time{}
+	if !pgTime.Valid || pgTime.Time.IsZero() {
+		return nil
 	}
 	return &pgTime.Time
 }
@@ -101,12 +103,24 @@ func (p *PostgresStore) pgIncidentToIncident(pgIncident database.Incident) core.
 }
 
 func (p *PostgresStore) Add(ctx context.Context, incident core.Incident) error {
-	params := p.incidentToAddParams(incident)
-	err := p.Queries.Add(ctx, params)
+	// check if incident already exist before adding.
+	inc, err := p.GetByID(ctx, incident.ID)
+	if errors.Is(err, pgx.ErrNoRows) {
+		// Incident does not exist - add it
+		params := p.incidentToAddParams(incident)
+		err = p.Queries.Add(ctx, params)
+		if err != nil {
+			return err
+		}
+	}
+	if inc.ID == incident.ID {
+		return fmt.Errorf("WARN: incident %q already exist\n", incident.ID)
+	}
 	if err != nil {
 		return err
 	}
-	// Todo: replace this
+
+	// Build report
 	incidents, err := p.GetAll(ctx)
 	if err != nil {
 		return err
@@ -174,6 +188,8 @@ func (p *PostgresStore) GetAll(ctx context.Context) ([]core.Incident, error) {
 func (p *PostgresStore) GetByID(ctx context.Context, id string) (core.Incident, error) {
 	pgIncident, err := p.Queries.GetByID(ctx, id)
 	if err != nil {
+		// the sqlc always fails there when adding new incidents because it did not found
+		// I dont think failing to get an incident because it already exists is trully error because it says something valuable - that i can continue adding new incidents if this check fails.
 		return core.Incident{}, err
 	}
 	inc := p.pgIncidentToIncident(pgIncident)
