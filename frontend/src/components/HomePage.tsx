@@ -1,4 +1,4 @@
-import { DownloadReport, IncidentReportProvider, IncidentsUnresolved } from './IncidentReport'
+import { DownloadReport, IncidentReportProvider, useIncidentReport } from './IncidentReport'
 import { ExportIncidents, IncidentListProvider } from './IncidentList'
 
 const HomePage = () => {
@@ -13,13 +13,9 @@ const HomePage = () => {
                 <div className='flex flex-col mt-12'>
                     <span className='text-xl font-bold'>Quick actions</span>
                     <div className='flex mt-2'>
-                        <div className="flex flex-col shadow-xl p-4 m-4 bg-base-300 rounded-xl h-fit">
                         <IncidentReportProvider>
                             <IncidentsUnresolved />
                         </IncidentReportProvider>
-                        </div>
-                    </div>
-                    <div className='flex mt-2'>
                         <div className="flex flex-col shadow-xl p-4 m-4 bg-base-300 rounded-xl h-fit">
                             <IncidentReportProvider>
                                 <DownloadReport />
@@ -35,6 +31,51 @@ const HomePage = () => {
             </div>
         </div>
     )
+}
+
+const IncidentsUnresolved = () => {
+    const { report, loading } = useIncidentReport()
+
+    if (loading) {
+        return (
+            <div className="flex w-30 justify-center items-center flex-col gap-4">
+                <div className="skeleton h-4 w-full"></div>
+                <div className="skeleton h-4 w-20"></div>
+                <div className="skeleton h-4 w-full"></div>
+                <div className="skeleton h-4 w-14"></div>
+            </div>
+        )
+    }
+
+    const statClassName = 'stat-value text-xl'
+
+    const displayIfUnresolved = () => {
+        if (report?.unresolved_ids === undefined) {
+            return <div className={statClassName}>NaN</div>
+        } else {
+            return (
+                <div className="flex flex-col items-center m-2">
+                <div className="flex">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="red" className="size-6">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m9-.75a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9 3.75h.008v.008H12v-.008Z" />
+                </svg>
+                <span className="text font-semibold ml-1">Unresolved</span>
+                </div>
+                <span className="text-xl text-red-500 font-bold">{report?.unresolved_ids?.length}</span>
+                <button className="btn btn-sm btn-neutral border-base-content mt-4 m-0.5 px-5.5" disabled>More</button>
+                </div>
+            )
+        }
+    }
+    if (report?.unresolved_ids === null) {
+        return null
+    }
+    return (
+        <div className="flex flex-col shadow-xl p-4 m-4 bg-base-300 rounded-xl h-fit">
+            {displayIfUnresolved()}
+        </div>
+    )
+    
 }
 
 export default HomePage

@@ -171,7 +171,15 @@ const SortableTable = ({columns, data, onDelete, onError, filter, resolvedFilter
     }
 
     const setupMessage = (row: any) => {
-        if (row.is_resolved) {
+        if (row.resolved_at === null) {
+            const browserTime = UTCToBrowserTime(row.started_at)
+            return (
+                <div className='flex flex-col justify-center items-end h-8'>
+                    <span>Pending ...</span>
+                    <span className='text-xs text-base-content/70'>Started: {browserTime}</span>
+                </div>
+            )
+        } else {
             const timeDiff = subtractDates(row.started_at, row.resolved_at)
             const time = secondsToTime(timeDiff)
             const browserTime = UTCToBrowserTime(row.resolved_at)
@@ -179,14 +187,6 @@ const SortableTable = ({columns, data, onDelete, onError, filter, resolvedFilter
                 <div className='flex flex-col justify-center items-end h-8'>
                     <span>Resolved in {time}</span>
                     <span className='text-xs text-base-content/70'>Ended: {browserTime}</span>
-                </div>
-            )
-        } else {
-            const browserTime = UTCToBrowserTime(row.started_at)
-            return (
-                <div className='flex flex-col justify-center items-end h-8'>
-                    <span>Pending ...</span>
-                    <span className='text-xs text-base-content/70'>Started: {browserTime}</span>
                 </div>
             )
         }

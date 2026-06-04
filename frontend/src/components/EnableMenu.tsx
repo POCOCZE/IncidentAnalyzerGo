@@ -1,4 +1,5 @@
-import { IncidentReportProvider, IncidentsUnresolvedText } from "./IncidentReport"
+import { useEffect, useState } from "react"
+import { IncidentReportProvider, useIncidentReport } from "./IncidentReport"
 
 interface MenuProps {
     selected: string
@@ -23,7 +24,6 @@ const EnableMenu = ({selected, onSelect}: MenuProps) => {
                 <path d="m12 5.432 8.159 8.159c.03.03.06.058.091.086v6.198c0 1.035-.84 1.875-1.875 1.875H15a.75.75 0 0 1-.75-.75v-4.5a.75.75 0 0 0-.75-.75h-3a.75.75 0 0 0-.75.75V21a.75.75 0 0 1-.75.75H5.625a1.875 1.875 0 0 1-1.875-1.875v-6.198a2.29 2.29 0 0 0 .091-.086L12 5.432Z" />
                 </svg>
                 </a>
-
             </li>
             <li className={selected === 'Add' ? menuParams : ''} onClick={() => {selectedLogic('Add')}}>
                 <a className="tooltip tooltip-right" data-tip="Add">
@@ -34,11 +34,9 @@ const EnableMenu = ({selected, onSelect}: MenuProps) => {
             </li>
             <li className={selected === 'Incidents' ? menuParams : ''} onClick={() => {selectedLogic('Incidents')}}>
                 <div className="indicator">
-                    <span className="indicator-item badge badge-error badge-xs absolute top-2 right-2">
-                        <IncidentReportProvider>
-                            <IncidentsUnresolvedText />
-                        </IncidentReportProvider>
-                    </span>
+                    <IncidentReportProvider>
+                        <CheckUnresolved />
+                    </IncidentReportProvider>
                     <a className="tooltip tooltip-right" data-tip="Incidents">
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className={selected === 'Incidents' ? menuIconParams : 'size-6'}>
                     <path d="M5.625 3.75a2.625 2.625 0 1 0 0 5.25h12.75a2.625 2.625 0 0 0 0-5.25H5.625ZM3.75 11.25a.75.75 0 0 0 0 1.5h16.5a.75.75 0 0 0 0-1.5H3.75ZM3 15.75a.75.75 0 0 1 .75-.75h16.5a.75.75 0 0 1 0 1.5H3.75a.75.75 0 0 1-.75-.75ZM3.75 18.75a.75.75 0 0 0 0 1.5h16.5a.75.75 0 0 0 0-1.5H3.75Z" />
@@ -56,6 +54,26 @@ const EnableMenu = ({selected, onSelect}: MenuProps) => {
             </li>
         </ul>
     )
+}
+
+const CheckUnresolved = () => {
+    const [haveUnresolved, setHaveUnresolved] = useState<boolean>(false)
+    const { report, loading } = useIncidentReport()
+
+    useEffect(() => {
+        if (!loading && report?.unresolved_ids !== undefined && report?.unresolved_ids?.length > 0) {
+            setHaveUnresolved(true)
+        } else {
+            setHaveUnresolved(false)
+        }
+    }, [report, loading])
+
+    if (haveUnresolved) {
+        return (
+            <span className="indicator-item badge badge-error badge-xs absolute top-2 right-2">{report?.unresolved_ids.length}</span>
+        )
+    }
+    return null
 }
 
 export default EnableMenu
