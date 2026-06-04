@@ -1,14 +1,8 @@
 import { useEffect } from "react"
 
 export const ChangeTheme = () => {
-    // const themes = [
-    //     {light: ['light', 'cupcake' , 'emerald']},
-    //     {dark: ['dark', 'aqua']}
-    // ]
-    // const themes = ['light', 'dark', 'emerald']
-
     // Those names must match the names in the "index.css" file.
-    const lightThemeName = 'my_light'
+    const lightThemeName = 'light'
     const darkThemeName = 'my_dark'
 
     useEffect(() => {
@@ -16,7 +10,6 @@ export const ChangeTheme = () => {
             "data-theme",
             localStorage.getItem("theme") === darkThemeName ? darkThemeName : lightThemeName)
         }, [])
-
 
     return (
         <div className="flex justify-center my-2">

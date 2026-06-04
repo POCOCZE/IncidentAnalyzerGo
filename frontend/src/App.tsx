@@ -13,7 +13,7 @@ const App = () => {
     return (
         <div className='flex bg-base-100'>
             {/* Left side */}
-            <div className='flex flex-col justify-between items-center rounded-xl ml-4 my-4 h-[97vh]'>
+            <div className='flex flex-col justify-between items-center rounded-lg ml-4 my-4 h-[97vh]'>
                 <EnableMenu selected={selectedMenu} onSelect={setSelectedMenu} />
                 <div>
                     <ChangeTheme />

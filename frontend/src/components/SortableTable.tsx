@@ -35,10 +35,10 @@ const SortableTable = ({columns, data, onDelete, onError, filter, resolvedFilter
 
     const filterResolvedIncidents = () => {
         if (resolvedFilter === 'unresolved') {
-            return filterSearchKeyword().filter(inc => inc.is_resolved === false)
+            return filterSearchKeyword().filter(inc => inc.resolved_at === null)
         }
         if (resolvedFilter === 'resolved') {
-            return filterSearchKeyword().filter(inc => inc.is_resolved === true)
+            return filterSearchKeyword().filter(inc => inc.resolved_at !== null)
         } else {
             return filterSearchKeyword()
         }
@@ -158,18 +158,6 @@ const SortableTable = ({columns, data, onDelete, onError, filter, resolvedFilter
         }
     }
 
-    const UTCToBrowserTime = (time: string):string => {
-        const d = new Date(time).toLocaleString('default', {
-            month: 'short',
-            day: '2-digit',
-            year: 'numeric',
-            hour: '2-digit',
-            hour12: false,
-            minute: '2-digit'
-        })
-        return d
-    }
-
     const setupMessage = (row: any) => {
         if (row.resolved_at === null) {
             const browserTime = UTCToBrowserTime(row.started_at)
@@ -242,6 +230,18 @@ const SortableTable = ({columns, data, onDelete, onError, filter, resolvedFilter
             </tbody>
         </table>
     )
+}
+
+export const UTCToBrowserTime = (time: string):string => {
+    const d = new Date(time).toLocaleString('default', {
+        month: 'short',
+        day: '2-digit',
+        year: 'numeric',
+        hour: '2-digit',
+        hour12: false,
+        minute: '2-digit'
+    })
+    return d
 }
 
 export default SortableTable

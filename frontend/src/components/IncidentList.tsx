@@ -147,7 +147,7 @@ export const IncidentListCenter = () => {
 
     const searchIncidentsField = () => {
         return (
-            <label className={`input rounded-2xl shadow-2xl border-none w-60 ${searchBg}`} onMouseEnter={() => setSearchBg('bg-base-100')} onMouseLeave={() => setSearchBg('bg-base-300')}>
+            <label className={`input rounded-lg shadow-2xl border border-base-content/15 w-60 ${searchBg}`} onMouseEnter={() => setSearchBg('bg-base-100')} onMouseLeave={() => setSearchBg('bg-base-300')}>
                 <svg className="h-[1em] opacity-50" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><g strokeLinejoin="round" strokeLinecap="round" strokeWidth="2.5" fill="none" stroke="currentColor"><circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.3-4.3"></path></g></svg>
                 <input type="search" placeholder="Search incident IDs" value={searchKeyword} onChange={(e) => setSearchKeyword(e.currentTarget.value)} />
             </label>
@@ -155,12 +155,12 @@ export const IncidentListCenter = () => {
     }
 
     return (
-        <div className='flex flex-col px-3 pt-3 grow rounded-xl h-[97vh] m-4 bg-base-200 shadow'>
+        <div className='flex flex-col px-3 pt-3 grow rounded-lg h-[97vh] m-4 bg-base-200 shadow border border-base-content/15'>
             <span className='flex text-3xl font-bold justify-center bg-linear-to-r from bg-orange-500 to-yellow-500 bg-clip-text text-transparent'>Incident list</span>
             <div className='flex justify-end m-1'>
                 {searchIncidentsField()}
             </div>
-            <div className='rounded-box shadow-md bg-base-300 m-1 mb-4 overflow-auto max-w-[80vw]'>
+            <div className='rounded-box shadow-md bg-base-300 m-1 mb-4 border border-base-content/15 overflow-auto max-w-[80vw]'>
                 {incidents ?
                 <SortableTable columns={columns} data={incidents} onDelete={setIncidents} onError={setError} filter={filter} resolvedFilter={resolvedFilter} setCurrentIncCount={setCurrentIncCount} searchKeyword={searchKeyword}/>
                 : emptyIncidentsGuard()}
@@ -235,9 +235,9 @@ export const IncidentListSidebar = () => {
     }
 
     return (
-        <div className='flex flex-col bg-base-200 rounded-xl my-4 ml-2 mr-4 h-[97vh] w-60 items-center shadow'>
+        <div className='flex flex-col bg-base-200 rounded-lg my-4 ml-2 mr-4 h-[97vh] w-60 items-center shadow border border-base-content/15'>
             <div className='flex flex-col'>
-                <div className="flex flex-col stats stats-vertical bg-base-300 m-4 shadow">
+                <div className="flex flex-col stats stats-vertical bg-base-300 m-4 shadow border border-base-content/15">
                     <div className="stat">
                         <div className="stat-title">Incident Count</div>
                         {handleIncidentCount()}
@@ -247,7 +247,7 @@ export const IncidentListSidebar = () => {
                         <IncidentReportSidebar />
                     </IncidentReportProvider>
                 </div>
-                <div className='flex flex-col rounded-xl shadow mx-4 bg-base-300'>
+                <div className='flex flex-col rounded-lg shadow mx-4 bg-base-300 border border-base-content/15'>
                     <span className='text-xl font-bold text-center mt-2'>Filters</span>
                     {severityFilter()}
                     {showIncidentsFilter()}

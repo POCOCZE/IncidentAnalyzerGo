@@ -85,22 +85,27 @@ const IncidentAdd = () => {
         }
     }
 
+    const minWidthFields = 'flex flex-col'
+    const inputWidthFields = 'mb-4 lg:min-w-[50vw]'
+
     return (
-        <div className="flex flex-col grow rounded-xl h-[97vh] m-4 bg-base-200">
+        <div className="flex flex-col grow rounded-lg h-[97vh] m-4 bg-base-200 border border-base-content/15">
             <span className="flex text-3xl font-bold justify-center mt-4 bg-linear-to-r from-amber-600 to-yellow-400 text-transparent bg-clip-text">Add Incident</span>
             <RenderToast />
             <fieldset className="fieldset border-base-200 rounded-box border p-4">
                 {/* <legend className="fieldset-legend">Page details</legend> */}
-                <div className="lg:flex md:flex justify-center">
-                    <div className="flex flex-col md:px-2 lg:px-[8vw]">
-                        <label className="label">Incident name</label>
-                        <input value={id} onChange={(e) => setID(e.target.value)} type="text" className="input mb-4 lg:min-w-[20vw]" placeholder="INC-001" />
-
+                <div className="flex flex-col items-center">
+                    <div className={minWidthFields}>
+                        <label className="label">Incident name / ID</label>
+                        <input value={id} onChange={(e) => setID(e.target.value)} type="text" className={`input ${inputWidthFields}`} placeholder="INC-001" />
+                    </div>
+                    <div className={minWidthFields}>
                         <label className="label">Title</label>
-                        <input value={title} onChange={(e) => setTitle(e.target.value)} type="text" className="input mb-4 lg:min-w-[20vw]" placeholder="PostgreSQL corruption" />
-
+                        <input value={title} onChange={(e) => setTitle(e.target.value)} type="text" className={`input ${inputWidthFields}`} placeholder="PostgreSQL corruption" />
+                    </div>
+                    <div className={minWidthFields}>
                         <label className="label">Severity</label>
-                        <label className="select mb-4 lg:min-w-[20vw]">
+                        <label className={`select ${inputWidthFields}`}>
                             <select value={severity} onChange={(e) => setSeverity(e.target.value)}>
                                 <option value='critical'>Critical</option>
                                 <option value='high'>High</option>
@@ -109,17 +114,19 @@ const IncidentAdd = () => {
                             </select>
                         </label>
                     </div>
-                    <div className='flex flex-col md:px-2 lg:px-[8vw]'>
+                    <div className={minWidthFields}>
                         <label className="label">Service Name</label>
-                        <input value={serviceName} onChange={(e) => setServiceName(e.target.value)} type="text" className="input mb-4 lg:min-w-[20vw]" placeholder="postgresql-replica-1" />
-
+                        <input value={serviceName} onChange={(e) => setServiceName(e.target.value)} type="text" className={`input ${inputWidthFields}`} placeholder="postgresql-replica-1" />
+                    </div>
+                    <div className={minWidthFields}>
                         <label className="label">Started at</label>
-                        <label className="input mb-4 lg:min-w-[20vw]">
+                        <label className={`input ${inputWidthFields}`}>
                             <input value={startedAt} onChange={(e) => setStartedAt(e.target.value)} type="datetime-local" />
                         </label>
-
+                    </div>
+                    <div className={minWidthFields}>
                         <label className="flex items-center label">Resolved at<span className="badge badge-soft badge-xs ml-0.5">Optional</span></label>
-                        <label className="input mb-4 lg:min-w-[20vw]">
+                        <label className={`input ${inputWidthFields}`}>
                             <input value={resolvedAt} onChange={(e) => setResolvedAt(e.target.value)} type="datetime-local" />
                         </label>
                     </div>
