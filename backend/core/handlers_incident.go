@@ -25,7 +25,8 @@ func addListHandler(store IncidentStorage) http.HandlerFunc {
 			encodeJSON(w, map[string]string{"error": "no incidents provided. did you specified correct endpoint?"}, "")
 			log.Printf("ERR: User tried to write 0 incidents. Maybe he specificed bad endpoint.")
 		}
-		err = store.AddList(r.Context(), incidents.Incidents)
+		totalDuplicateCount, err := store.AddList(r.Context(), incidents.Incidents)
+		uniqueIncCount := len(incidents.Incidents) - totalDuplicateCount
 		if err != nil {
 			w.WriteHeader(http.StatusBadRequest)
 			encodeJSON(w, map[string]string{"error": fmt.Sprintf("%s", err)}, "")
@@ -33,7 +34,13 @@ func addListHandler(store IncidentStorage) http.HandlerFunc {
 			return
 		} else {
 			w.WriteHeader(http.StatusCreated)
-			log.Printf("INFO: Added list of %v incidents", len(incidents.Incidents))
+			if uniqueIncCount == 0 {
+				encodeJSON(w, map[string]string{"info": fmt.Sprintf("skipping %v duplicate incidents", len(incidents.Incidents))}, "")
+				log.Printf("INFO: skipping %v duplicate incidents", len(incidents.Incidents))
+			} else {
+				encodeJSON(w, map[string]string{"info": fmt.Sprintf("added %v unique out of %v incidents", uniqueIncCount, len(incidents.Incidents))}, "")
+				log.Printf("INFO: added %v/%v unique incidents", uniqueIncCount, len(incidents.Incidents))
+			}
 		}
 	}
 }
@@ -45,22 +52,28 @@ func addHandler(store IncidentStorage) http.HandlerFunc {
 
 		w.Header().Add("Content-Type", "application/json")
 		if err != nil {
+			// w.WriteHeader(http.StatusBadRequest)
 			w.WriteHeader(http.StatusBadRequest)
 			encodeJSON(w, map[string]string{"error": "invalid JSON"}, "Error occured while encoding JSON")
 			log.Printf("ERR: %s", err)
 			return
 		}
 
-		err = store.Add(r.Context(), incident)
+		totalDuplicateCount, err := store.Add(r.Context(), incident)
 		if err != nil {
 			w.WriteHeader(http.StatusBadRequest)
 			encodeJSON(w, map[string]string{"error": fmt.Sprintf("invalid structure: %s", err)}, "")
-			log.Printf("ERR: Invalid structure: %s", err)
+			log.Printf("ERR: invalid structure: %s", err)
 		} else {
-			w.WriteHeader(http.StatusCreated)
-			// This is not needed at all
-			// encodeJSON(w, "", "")
-			log.Printf("INFO: Added new incident ID: %s", incident.ID)
+			// w.WriteHeader(http.StatusCreated)
+			w.WriteHeader(http.StatusOK)
+			if totalDuplicateCount != 0 {
+				encodeJSON(w, map[string]string{"warn": fmt.Sprintf("skipping duplicate incident %v", incident.ID)}, "")
+				log.Printf("WARN: skipping duplicate incident %v", incident.ID)
+			} else {
+				encodeJSON(w, map[string]string{"info": fmt.Sprintf("added new unique incident ID: %v", incident.ID)}, "")
+				log.Printf("INFO: added new unique incident ID: %v", incident.ID)
+			}
 		}
 	}
 }

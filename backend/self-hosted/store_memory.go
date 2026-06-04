@@ -26,7 +26,7 @@ func NewMemoryStore() *MemoryStore {
     }
 }
 
-func (m *MemoryStore) Add(ctx context.Context, incident core.Incident) error {
+func (m *MemoryStore) Add(ctx context.Context, incident core.Incident) (int, error) {
 	// Add write lock with mutex
 	m.Mu.Lock()
 	defer m.Mu.Unlock()
@@ -34,16 +34,18 @@ func (m *MemoryStore) Add(ctx context.Context, incident core.Incident) error {
 	validate := validator.New(validator.WithRequiredStructEnabled())
 	err := validate.Struct(incident)
 	if err != nil {
-		return err
+		return 0, err
 	}
 
 	// Check if the key already exist, this will prevent some bugs and errors
+	var duplicateIncCount int
 	for _, storedInc := range m.Incidents {
 		// If incident already exist in slice - return error
 		// ? Not sure whether there is more effective solution that could immidiately find the incident without relying on loops - I would need to switch to `map`, but this would result in incompatibilities...
 		// ? I will keep it as it as, since Go is very fast.
 		if storedInc.ID == incident.ID {
-			return fmt.Errorf("error: incident already exist")
+			duplicateIncCount = 1
+			// return fmt.Errorf("error: incident already exist")
 		}
 	}
 
@@ -52,7 +54,7 @@ func (m *MemoryStore) Add(ctx context.Context, incident core.Incident) error {
 	if incident.StartedAt.IsZero() {
 		incident.StartedAt = core.ConvertToUTC(incident.StartedAt)
 	} else {
-		return fmt.Errorf("startedAt time is not valid")
+		return 0, fmt.Errorf("startedAt time is not valid")
 	}
 	if incident.ResolvedAt.IsZero() {
 		incident.ResolvedAt = core.ConvertToUTC(incident.ResolvedAt)
@@ -64,20 +66,22 @@ func (m *MemoryStore) Add(ctx context.Context, incident core.Incident) error {
 	m.Incidents = append(m.Incidents, incident)
 	_, err = core.BuildReport(m.Incidents)
 	if err != nil {
-		return fmt.Errorf("error building report: %s", err)
+		return 0, fmt.Errorf("error building report: %s", err)
 	}
 
-	return nil
+	return duplicateIncCount, nil
 }
 
-func (m *MemoryStore) AddList(ctx context.Context, incidents []core.Incident) error {
+func (m *MemoryStore) AddList(ctx context.Context, incidents []core.Incident) (int, error) {
+	var totalDuplicateCount int
 	for _, incident := range incidents {
-		err := m.Add(ctx, incident)
+		duplicateCount, err := m.Add(ctx, incident)
+		totalDuplicateCount += duplicateCount
 		if err != nil {
-			return err
+			return 0, err
 		}
 	}
-	return nil
+	return totalDuplicateCount, nil
 }
 
 func (m *MemoryStore) Edit(ctx context.Context, id string, incident core.Incident) error {

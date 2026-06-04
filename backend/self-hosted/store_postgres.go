@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"log"
 	"time"
 
 	"github.com/jackc/pgx/v5"
@@ -103,7 +102,7 @@ func (p *PostgresStore) pgIncidentToIncident(pgIncident database.Incident) core.
 	return params
 }
 
-func (p *PostgresStore) Add(ctx context.Context, incident core.Incident) error {
+func (p *PostgresStore) Add(ctx context.Context, incident core.Incident) (int, error) {
 	// check if incident already exist before adding.
 	inc, err := p.GetByID(ctx, incident.ID)
 	if errors.Is(err, pgx.ErrNoRows) {
@@ -111,36 +110,40 @@ func (p *PostgresStore) Add(ctx context.Context, incident core.Incident) error {
 		params := p.incidentToAddParams(incident)
 		err = p.Queries.Add(ctx, params)
 		if err != nil {
-			return err
+			return 0, err
 		}
 	}
+	var duplicateCount int
 	if inc.ID == incident.ID {
-		log.Printf("WARN: incident %q already exist\n", incident.ID)
+		duplicateCount = 1
+		// log.Printf("WARN: incident %q already exist, skipping\n", incident.ID)
 	}
 	if err != nil {
-		return err
+		return 0, err
 	}
 
 	// Build report
 	incidents, err := p.GetAll(ctx)
 	if err != nil {
-		return err
+		return 0, err
 	}
 	_, err = core.BuildReport(incidents)
 	if err != nil {
-		return err
+		return 0, err
 	}
-	return nil
+	return duplicateCount, nil
 }
 
-func(p *PostgresStore) AddList(ctx context.Context, incidents []core.Incident) error {
+func(p *PostgresStore) AddList(ctx context.Context, incidents []core.Incident) (int, error) {
+	var totalDuplicateCount int
 	for _, incident := range incidents {
-		err := p.Add(ctx, incident)
+		duplicateCount, err := p.Add(ctx, incident)
+		totalDuplicateCount += duplicateCount
 		if err != nil {
-			return err
+			return 0, err
 		}
 	}
-	return nil
+	return totalDuplicateCount, nil
 }
 
 func(p *PostgresStore) Edit(ctx context.Context, id string, incident core.Incident) error {

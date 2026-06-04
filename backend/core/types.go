@@ -45,8 +45,8 @@ type IncidentDuration struct {
 type IncidentStorage interface {
 	GetAll(ctx context.Context) ([]Incident, error)
 	GetByID(ctx context.Context, id string) (Incident, error)
-	Add(ctx context.Context, incident Incident) error
-	AddList(ctx context.Context, incidents []Incident) error
+	Add(ctx context.Context, incident Incident) (int, error)
+	AddList(ctx context.Context, incidents []Incident) (int, error)
 	Edit(ctx context.Context, id string, incident Incident) error
 	DeleteByID(ctx context.Context, id string) error
 	DeleteAll(ctx context.Context) error

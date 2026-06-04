@@ -51,7 +51,7 @@ func main() {
         incidentsFile := &core.IncidentsFile{}
         incidentsFile.OpenInputFile(*file)
         for _, incident := range incidentsFile.Incidents {
-            err := store.Add(ctx, incident)
+            _, err := store.Add(ctx, incident)
             if err != nil {
                 fmt.Printf("%s", err)
                 continue
