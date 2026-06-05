@@ -6,8 +6,13 @@ const HomePage = () => {
         <div className="flex flex-col grow rounded-lg justify-start h-[97vh] m-4 bg-base-200 border border-base-content/15">
             <span className='text-center text-4xl mt-4 font-bold bg-linear-to-r from-blue-500 to-cyan-400 text-transparent bg-clip-text'>Incident Analyzer</span>
             <div className='flex flex-col ml-20 m-2'>
-                <div className='flex flex-col mt-6'>
-                    <span className='text-lg font-semibold'>This tool allows to quickly add or remove incidents, download incident report or see all incidents in a sortable table with filters.</span>
+                <div className='flex flex-col mt-4'>
+                    <div role="alert" className="alert alert-soft w-fit mb-1 bg-linear-to-r from-emerald-300 to-green-400 dark:from-emerald-800 dark:to-green-900">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" className="stroke-info h-6 w-6 shrink-0">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                        <span className='text-lg'>Quickly add, edit or remove incidents. Download report or see all incidents in a sortable table with filters.</span>
+                    </div>
                     <span className='font-light'>Quick help: Navigate through various features on the right side to do actions.</span>
                 </div>
                 <div className='flex flex-col mt-12'>
