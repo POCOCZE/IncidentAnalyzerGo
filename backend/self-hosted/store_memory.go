@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"sync"
@@ -25,7 +26,7 @@ func NewMemoryStore() *MemoryStore {
     }
 }
 
-func (m *MemoryStore) Add(incident core.Incident) error {
+func (m *MemoryStore) Add(ctx context.Context, incident core.Incident) (int, error) {
 	// Add write lock with mutex
 	m.Mu.Lock()
 	defer m.Mu.Unlock()
@@ -33,27 +34,29 @@ func (m *MemoryStore) Add(incident core.Incident) error {
 	validate := validator.New(validator.WithRequiredStructEnabled())
 	err := validate.Struct(incident)
 	if err != nil {
-		return err
+		return 0, err
 	}
 
 	// Check if the key already exist, this will prevent some bugs and errors
+	var duplicateIncCount int
 	for _, storedInc := range m.Incidents {
 		// If incident already exist in slice - return error
 		// ? Not sure whether there is more effective solution that could immidiately find the incident without relying on loops - I would need to switch to `map`, but this would result in incompatibilities...
 		// ? I will keep it as it as, since Go is very fast.
 		if storedInc.ID == incident.ID {
-			return fmt.Errorf("error: incident already exist")
+			duplicateIncCount = 1
+			// return fmt.Errorf("error: incident already exist")
 		}
 	}
-	
+
 	// * This will be removed in the future
 	// Check if time is defined (resolvedAt can be null) and convert to UTC if needed
-	if core.IsValidTime(incident.StartedAt) {
+	if incident.StartedAt.IsZero() {
 		incident.StartedAt = core.ConvertToUTC(incident.StartedAt)
 	} else {
-		return fmt.Errorf("startedAt time is not valid")
+		return 0, fmt.Errorf("startedAt time is not valid")
 	}
-	if core.IsValidTime(incident.ResolvedAt) {
+	if incident.ResolvedAt.IsZero() {
 		incident.ResolvedAt = core.ConvertToUTC(incident.ResolvedAt)
 	} else {
 		incident.ResolvedAt = nil
@@ -63,23 +66,25 @@ func (m *MemoryStore) Add(incident core.Incident) error {
 	m.Incidents = append(m.Incidents, incident)
 	_, err = core.BuildReport(m.Incidents)
 	if err != nil {
-		return fmt.Errorf("error building report: %s", err)
+		return 0, fmt.Errorf("error building report: %s", err)
 	}
 
-	return nil
+	return duplicateIncCount, nil
 }
 
-func (m *MemoryStore) AddList(incidents []core.Incident) error {
+func (m *MemoryStore) AddList(ctx context.Context, incidents []core.Incident) (int, error) {
+	var totalDuplicateCount int
 	for _, incident := range incidents {
-		err := m.Add(incident)
+		duplicateCount, err := m.Add(ctx, incident)
+		totalDuplicateCount += duplicateCount
 		if err != nil {
-			return err
+			return 0, err
 		}
 	}
-	return nil
+	return totalDuplicateCount, nil
 }
 
-func (m *MemoryStore) Edit(id string, incident core.Incident) error {
+func (m *MemoryStore) Edit(ctx context.Context, id string, incident core.Incident) error {
 	// * Info: id - original incident ID; incident - changed incident struct; Users are not allowed to edit incident ID - returns error (frontend blocks the input field too to edit it)
 	m.Mu.Lock()
 	defer m.Mu.Unlock()
@@ -98,12 +103,12 @@ func (m *MemoryStore) Edit(id string, incident core.Incident) error {
 
 			// * This will be removed in the future
 			// Check if time is defined (resolvedAt can be null) and convert to UTC if needed
-			if core.IsValidTime(incident.StartedAt) {
+			if !incident.StartedAt.IsZero() {
 				incident.StartedAt = core.ConvertToUTC(incident.StartedAt)
 			} else {
 				return fmt.Errorf("startedAt time is not valid")
 			}
-			if core.IsValidTime(incident.ResolvedAt) {
+			if !incident.ResolvedAt.IsZero() {
 				incident.ResolvedAt = core.ConvertToUTC(incident.ResolvedAt)
 			} else {
 				incident.ResolvedAt = nil
@@ -125,31 +130,21 @@ func (m *MemoryStore) Edit(id string, incident core.Incident) error {
 	return nil
 }
 
-func (m *MemoryStore) GetAll() ([]core.Incident, error) {
+func (m *MemoryStore) GetAll(ctx context.Context) ([]core.Incident, error) {
 	incidents := m.Incidents
-	incidentsWide, err := core.IncidentsWide(incidents)
-	if err != nil {
-		return nil, err
-	}
-
-	return incidentsWide, nil
+	return incidents, nil
 }
 
-func (m *MemoryStore) GetByID(id string) (core.Incident, error) {
-	for _, incident := range m.Incidents {
-		if incident.ID == id {
-			inc, err := core.IncidentWide(incident)
-			if err != nil {
-				return core.Incident{}, err
-			}
+func (m *MemoryStore) GetByID(ctx context.Context, id string) (core.Incident, error) {
+	for _, inc := range m.Incidents {
+		if inc.ID == id {
 			return inc, nil
 		}
 	}
-
 	return core.Incident{}, fmt.Errorf("incident ID %q not found", id)
 }
 
-func (m *MemoryStore) DeleteByID(id string) error {
+func (m *MemoryStore) DeleteByID(ctx context.Context, id string) error {
 	m.Mu.Lock()
 	defer m.Mu.Unlock()
 
@@ -177,7 +172,7 @@ func (m *MemoryStore) DeleteByID(id string) error {
 	return nil
 }
 
-func (m *MemoryStore) DeleteAll() error {
+func (m *MemoryStore) DeleteAll(ctx context.Context) error {
 	m.Incidents = []core.Incident{}
 
 	return nil

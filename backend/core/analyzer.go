@@ -5,44 +5,23 @@ import (
 	"time"
 )
 
-func IncidentMessage(incident Incident, durations map[string]IncidentDuration) (string, bool) {
-    // Handles message generation for GroupIncidentsBy... functions
-    // For resolved incidents print how long it took in HMS format
-    // Returns message string and boolean whether the incident is resolved
-    var isResolved bool
-    message := fmt.Sprintf("Pending (Started: %s)", TimeToString(incident.StartedAt))
-
-    isValid := IsValidTime(incident.ResolvedAt)
-    if isValid {
-        isResolved = true
-        resolvedIn := durations[incident.ID].HMSFormat
-        message = fmt.Sprintf("Resolved in %s (Ended: %s)", resolvedIn, TimeToString(incident.ResolvedAt))
-    }
-
-    return message, isResolved
-}
-
-func (r *IncidentReport) groupIncidentsByService(incident Incident, durations map[string]IncidentDuration) {
+func (r *IncidentReport) groupIncidentsByService(incident Incident) {
     // For each service name assign ServiceDetails struct value.
     // Service name keys are not sorted.
 
-    message, isResolved := IncidentMessage(incident, durations)
-
     // Check whether serviceName keys exist, create them otherwise
-    _, exists := r.ByServices[incident.Service]
+    _, exists := r.ByServices[incident.ServiceName]
     if !exists {
-        r.ByServices[incident.Service] = make(map[string]IncidentReportDetails)
+        r.ByServices[incident.ServiceName] = make(map[string]IncidentReportDetails)
     }
 
-    r.ByServices[incident.Service][incident.ID] = IncidentReportDetails{
+    r.ByServices[incident.ServiceName][incident.ID] = IncidentReportDetails{
         Title: incident.Title,
         Severity: incident.Severity,
-        Message: message,
-        IsResolved: isResolved,
     }
 }
 
-func (r *IncidentReport) groupIncidentsBySeverity(incident Incident, durations map[string]IncidentDuration) {
+func (r *IncidentReport) groupIncidentsBySeverity(incident Incident) {
     // For each severity assign SeverityDetails struct value.
     // Severity keys are not sorted by severity
 
@@ -52,23 +31,17 @@ func (r *IncidentReport) groupIncidentsBySeverity(incident Incident, durations m
         r.BySeverity[incident.Severity] = make(map[string]IncidentReportDetails)
     }
 
-    message, isResolved := IncidentMessage(incident, durations)
     r.BySeverity[incident.Severity][incident.ID] = IncidentReportDetails{
         Title: incident.Title,
-        Service: incident.Service,
-        Message: message,
-        IsResolved: isResolved,
+        Service: incident.ServiceName,
     }
 }
 
-func (r *IncidentReport) groupIncidentsByID(incident Incident, durations map[string]IncidentDuration) {
-    message, isResolved := IncidentMessage(incident, durations)
+func (r *IncidentReport) groupIncidentsByID(incident Incident) {
     r.ByID[incident.ID] = IncidentReportDetails{
         Title: incident.Title,
         Severity: incident.Severity,
-        Service: incident.Service,
-        Message: message,
-        IsResolved: isResolved,
+        Service: incident.ServiceName,
     }
 }
 
@@ -96,7 +69,7 @@ func (r *IncidentReport) CalcMTTRSec(durations map[string]IncidentDuration) erro
     return nil
 }
 
-func calcIncidentDuration(incident Incident, durations map[string]IncidentDuration) {
+func calcIncidentDuration(durations map[string]IncidentDuration, incident Incident) {
     // , allIncidentsDuration map[string]float64 -> as output
     // Calculate incident duration for all incidents
     // Unresolved incidents will have 0 seconds duration, resolved one gets calculated
@@ -139,10 +112,10 @@ func BuildReport(incidents []Incident) (*IncidentReport, error) {
         }
 
         // --- Calculate incident duration and group incidents --- //
-        calcIncidentDuration(incident, durations)
-        report.groupIncidentsByService(incident, durations)
-        report.groupIncidentsBySeverity(incident, durations)
-        report.groupIncidentsByID(incident, durations)
+        calcIncidentDuration(durations, incident)
+        report.groupIncidentsByService(incident)
+        report.groupIncidentsBySeverity(incident)
+        report.groupIncidentsByID(incident)
     }
 
     // --- Calculate Mean time to recovery --- //

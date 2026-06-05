@@ -1,93 +1,170 @@
 package main
 
 import (
-	"database/sql"
+	"context"
+	"errors"
 	"fmt"
+	"time"
 
+	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgtype"
+	"github.com/jackc/pgx/v5/pgxpool"
 	_ "github.com/jackc/pgx/v5/stdlib"
 	"github.com/pococze/incidentanalyzergo/backend/core"
+	"github.com/pococze/incidentanalyzergo/backend/self-hosted/database"
 )
 
 type PostgresStore struct {
-	db *sql.DB
+	Pool *pgxpool.Pool
+	Queries *database.Queries
 }
 
-func NewPostgresStore(connString string) (*PostgresStore, error) {
-	// Constructor function
-	db, err := sql.Open("pgx", connString)
+func NewPostgresStore(ctx context.Context, connString string) (*PostgresStore, error) {
+	pool, err := pgxpool.New(ctx, connString)
 	if err != nil {
 		return nil, fmt.Errorf("oppening database: %w", err)
 	}
 
-	if err := db.Ping(); err != nil {
+	if err := pool.Ping(ctx); err != nil {
 		return nil, fmt.Errorf("connecting to database: %w", err)
 	}
 
-	return &PostgresStore{db: db}, nil
+	queries := database.New(pool)
+	return &PostgresStore{
+		Pool: pool,
+		Queries: queries,
+	}, nil
 }
 
-func (p *PostgresStore) Add(incident core.Incident) error {
-	var err error
-	_, err = p.db.Exec(
-		`INSERT INTO incidents (id, title, severity, service_name, started_at, resolved_at) VALUES ($1, $2, $3, $4, $5, $6)`,
-		incident.ID,
-		incident.Title,
-		incident.Severity,
-		incident.Service,
-		incident.StartedAt,
-		incident.ResolvedAt,
-	)
-	if err != nil {
-		return err
+func timeToPgTimestamptz(t *time.Time) pgtype.Timestamptz {
+	if t == nil || t.IsZero() {
+		return pgtype.Timestamptz{
+			Time: time.Time{},
+			InfinityModifier: 0,
+			Valid: false, // This represents SQL NULL
+		}
 	}
-	incidents, err := p.GetAll()
+	return pgtype.Timestamptz{
+		Time: *t,
+		InfinityModifier: 0,
+		Valid: true,
+	}
+}
+
+// func boolToPgBool(b bool) pgtype.Bool {
+// 	return pgtype.Bool{
+// 		Bool: b,
+// 		Valid: true,
+// 	}
+// }
+
+func pgTimestamptzToTime(pgTime pgtype.Timestamptz) *time.Time {
+	if !pgTime.Valid || pgTime.Time.IsZero() {
+		return nil
+	}
+	return &pgTime.Time
+}
+
+func (p *PostgresStore) incidentToAddParams(incident core.Incident) database.AddParams {
+	params := database.AddParams{
+		ID: incident.ID,
+		Title: incident.Title,
+		Severity: incident.Severity,
+		ServiceName: incident.ServiceName,
+		StartedAt: timeToPgTimestamptz(incident.StartedAt),
+		ResolvedAt: timeToPgTimestamptz(incident.ResolvedAt),
+	}
+	return params
+}
+
+func (p *PostgresStore) incidentToEditParams(id string, incident core.Incident) database.EditParams {
+	params := database.EditParams{
+		ID: incident.ID,
+		Title: incident.Title,
+		Severity: incident.Severity,
+		ServiceName: incident.ServiceName,
+		StartedAt: timeToPgTimestamptz(incident.StartedAt),
+		ResolvedAt: timeToPgTimestamptz(incident.ResolvedAt),
+		ID_2: id, 
+	}
+	return params
+}
+
+func (p *PostgresStore) pgIncidentToIncident(pgIncident database.Incident) core.Incident {
+	params := core.Incident{
+		ID: pgIncident.ID,
+		Title: pgIncident.Title,
+		Severity: pgIncident.Severity,
+		ServiceName: pgIncident.ServiceName,
+		StartedAt: pgTimestamptzToTime(pgIncident.StartedAt),
+		ResolvedAt: pgTimestamptzToTime(pgIncident.ResolvedAt),
+	}
+	return params
+}
+
+func (p *PostgresStore) Add(ctx context.Context, incident core.Incident) (int, error) {
+	// check if incident already exist before adding.
+	inc, err := p.GetByID(ctx, incident.ID)
+	if errors.Is(err, pgx.ErrNoRows) {
+		// Incident does not exist - add it
+		params := p.incidentToAddParams(incident)
+		err = p.Queries.Add(ctx, params)
+		if err != nil {
+			return 0, err
+		}
+	}
+	var duplicateCount int
+	if inc.ID == incident.ID {
+		duplicateCount = 1
+		// log.Printf("WARN: incident %q already exist, skipping\n", incident.ID)
+	}
 	if err != nil {
-		return err
+		return 0, err
+	}
+
+	// Build report
+	incidents, err := p.GetAll(ctx)
+	if err != nil {
+		return 0, err
 	}
 	_, err = core.BuildReport(incidents)
 	if err != nil {
-		return err
+		return 0, err
 	}
-	return nil
+	return duplicateCount, nil
 }
 
-func(p *PostgresStore) AddList(incidents []core.Incident) error {
+func(p *PostgresStore) AddList(ctx context.Context, incidents []core.Incident) (int, error) {
+	var totalDuplicateCount int
 	for _, incident := range incidents {
-		err := p.Add(incident)
+		duplicateCount, err := p.Add(ctx, incident)
+		totalDuplicateCount += duplicateCount
 		if err != nil {
-			return err
+			return 0, err
 		}
 	}
-	return nil
+	return totalDuplicateCount, nil
 }
 
-func(p *PostgresStore) Edit(id string, incident core.Incident) error {
+func(p *PostgresStore) Edit(ctx context.Context, id string, incident core.Incident) error {
 	var inc core.Incident
-	inc, err := p.GetByID(id)
+	inc, err := p.GetByID(ctx, id)
 	if err != nil {
 		return err
 	}
-	
+
 	// Todo: restrict changing StartedAt too. Not yet implemented.
 	if inc.ID != incident.ID {
 		return fmt.Errorf("changing Incident ID is not allowed")
 	}
-	_, err = p.db.Exec(
-		`UPDATE incidents SET id = $1, title = $2, severity = $3, service_name = $4, started_at = $5, resolved_at = $6 WHERE id = $7`,
-		incident.ID,
-		incident.Title,
-		incident.Severity,
-		incident.Service,
-		incident.StartedAt,
-		incident.ResolvedAt,
-		id,
-	)
+	params := p.incidentToEditParams(id, incident)
+	err = p.Queries.Edit(ctx, params)
 	if err != nil {
-		return fmt.Errorf("incident ID %q not found", id)
+		return err
 	}
 
-	// Get All incidents to satisfy function - rebuild report
-	incidents, err := p.GetAll()
+	// GetAll incidents to satisfy build report function
+	incidents, err := p.GetAll(ctx)
 	if err != nil {
 		return err
 	}
@@ -98,56 +175,39 @@ func(p *PostgresStore) Edit(id string, incident core.Incident) error {
 	return nil
 }
 
-func (p *PostgresStore) GetAll() (incidentsWide []core.Incident, err error) {
-	rows, err := p.db.Query(`SELECT id, title, severity, service_name, started_at, resolved_at FROM incidents`)
+func (p *PostgresStore) GetAll(ctx context.Context) ([]core.Incident, error) {
+	pgIncidents, err := p.Queries.GetAll(ctx)
 	if err != nil {
 		return nil, err
 	}
-	defer func() {
-		if closeErr := rows.Close(); closeErr != nil {
-			err = closeErr
-		}
-	}()
 
 	var incidents []core.Incident
-	for rows.Next() {
-		var inc core.Incident
-		err := rows.Scan(&inc.ID, &inc.Title, &inc.Severity, &inc.Service, &inc.StartedAt, &inc.ResolvedAt)
-		if err != nil {
-			return nil, err
-		}
+	for _, pgIncident := range pgIncidents {
+		inc := p.pgIncidentToIncident(pgIncident)
 		incidents = append(incidents, inc)
 	}
-	incidentsWide, err = core.IncidentsWide(incidents)
+	return incidents, nil
+}
+
+func (p *PostgresStore) GetByID(ctx context.Context, id string) (core.Incident, error) {
+	pgIncident, err := p.Queries.GetByID(ctx, id)
 	if err != nil {
-		return nil, err
+		// the sqlc always fails there when adding new incidents because it did not found
+		// I dont think failing to get an incident because it already exists is trully error because it says something valuable - that i can continue adding new incidents if this check fails.
+		return core.Incident{}, err
 	}
-
-	return incidentsWide, rows.Err()
+	inc := p.pgIncidentToIncident(pgIncident)
+	return inc, nil
 }
 
-func (p *PostgresStore) GetByID(id string) (core.Incident, error) {
-	var inc core.Incident
-	row := p.db.QueryRow(`SELECT id, title, severity, service_name, started_at, resolved_at FROM incidents WHERE id = $1`, id)
-	err := row.Scan(&inc.ID, &inc.Title, &inc.Severity, &inc.Service, &inc.StartedAt, &inc.ResolvedAt)
-	if err == sql.ErrNoRows {
-		return inc, fmt.Errorf("incident ID %q not found", id)
-	}
-	return inc, err
-}
-
-func (p *PostgresStore) DeleteByID(id string) error {
-	result, err := p.db.Exec(`DELETE FROM incidents WHERE id = $1`, id)
+func (p *PostgresStore) DeleteByID(ctx context.Context, id string) error {
+	err := p.Queries.DeleteByID(ctx, id)
 	if err != nil {
 		return err
 	}
-	rows, _ := result.RowsAffected()
-	if rows == 0 {
-		return fmt.Errorf("incident ID %q not found", id)
-	}
 
 	// Get All incidents to satisfy function - rebuild report
-	incidents, err := p.GetAll()
+	incidents, err := p.GetAll(ctx)
 	if err != nil {
 		return err
 	}
@@ -155,16 +215,14 @@ func (p *PostgresStore) DeleteByID(id string) error {
 	if err != nil {
 		return err
 	}
-
 	return nil
 }
 
-func (p *PostgresStore) DeleteAll() error {
+func (p *PostgresStore) DeleteAll(ctx context.Context) error {
 	// !This removes everything from the database forever!
-	_, err := p.db.Exec(`DELETE FROM incidents`)
+	err := p.Queries.DeleteAll(ctx)
 	if err != nil {
 		return err
 	}
-
 	return nil
 }

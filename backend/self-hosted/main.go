@@ -1,15 +1,18 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"fmt"
 	"log"
+	"time"
 
 	"github.com/pococze/incidentanalyzergo/backend/core"
 )
 
 func main() {
     // --- Create flags --- //
+    // Todo: remove all CLI features
     file := flag.String("file", "", "Path to incidents JSON file")
     output := flag.String("output", "stdout", "Output type. Options: stdout (default), <your-file-name>")
     serve := flag.Bool("serve", false, "Start an HTTP server")
@@ -26,10 +29,14 @@ func main() {
 	log.Printf("+-----------------------+")
 
     var store core.IncidentStorage
+
+    // Create context - mainly for database timeout
+    ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+
     if *pgConn != "" {
         var err error
-        fmt.Println("Using database...")
-        store, err = NewPostgresStore(*pgConn)
+        log.Println("Using database...")
+        store, err = NewPostgresStore(ctx, *pgConn)
         if err != nil {
             log.Fatalf("ERR: %s", err)
         }
@@ -40,25 +47,25 @@ func main() {
     }
 
     // --- Inizialize instance and open JSON --- //
-    incidentsFile := &core.IncidentsFile{}
     if *file != "" {
+        incidentsFile := &core.IncidentsFile{}
         incidentsFile.OpenInputFile(*file)
         for _, incident := range incidentsFile.Incidents {
-            // Todo: handle error. Add HTTP handler `AddList` that will loop through each incident (like here) and add list of incidents to storage. Implement this to MemoryStore for now.
-            // ? This feature will allow batch processing of incidents - importing. Exporting will be added too, but after import is added.
-            err := store.Add(incident)
+            _, err := store.Add(ctx, incident)
             if err != nil {
                 fmt.Printf("%s", err)
+                continue
             }
         }
     }
+    cancel()
 
     if *serve {
         // Start HTTP server and pass port
-        core.StartServer(*port, store)
+        core.StartServer(ctx, *port, store)
     } else {
         // CLI mode
-        incidents, _ := store.GetAll()
+        incidents, _ := store.GetAll(ctx)
         report, err := core.BuildReport(incidents)
         if err != nil {
             fmt.Printf("%s", err)

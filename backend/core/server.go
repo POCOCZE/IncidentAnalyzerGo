@@ -1,6 +1,7 @@
 package core
 
 import (
+	"context"
 	"encoding/json"
 	"log"
 	"net/http"
@@ -15,7 +16,7 @@ func healthHandler(w http.ResponseWriter, r *http.Request) {
 	encodeJSON(w, map[string]string{"status": "ok"}, "")
 }
 
-func StartServer(port string, store IncidentStorage) {
+func StartServer(ctx context.Context, port string, store IncidentStorage) {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/healthz", healthHandler)
 	mux.HandleFunc("GET /report", getReportHandler(store))
@@ -42,7 +43,7 @@ func encodeJSON(w http.ResponseWriter, content any, errMessage string) {
 		// If custom error message variable is empty, use default
 		errMessage = "Error encoding response"
 	}
-	
+
 	err := json.NewEncoder(w).Encode(content)
 	if err != nil {
 		log.Fatalf("%s: %s", errMessage, err)

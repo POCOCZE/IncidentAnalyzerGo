@@ -35,10 +35,10 @@ const SortableTable = ({columns, data, onDelete, onError, filter, resolvedFilter
 
     const filterResolvedIncidents = () => {
         if (resolvedFilter === 'unresolved') {
-            return filterSearchKeyword().filter(inc => inc.is_resolved === false)
+            return filterSearchKeyword().filter(inc => inc.resolved_at === null)
         }
         if (resolvedFilter === 'resolved') {
-            return filterSearchKeyword().filter(inc => inc.is_resolved === true)
+            return filterSearchKeyword().filter(inc => inc.resolved_at !== null)
         } else {
             return filterSearchKeyword()
         }
@@ -158,20 +158,16 @@ const SortableTable = ({columns, data, onDelete, onError, filter, resolvedFilter
         }
     }
 
-    const UTCToBrowserTime = (time: string):string => {
-        const d = new Date(time).toLocaleString('default', {
-            month: 'short',
-            day: '2-digit',
-            year: 'numeric',
-            hour: '2-digit',
-            hour12: false,
-            minute: '2-digit'
-        })
-        return d
-    }
-
     const setupMessage = (row: any) => {
-        if (row.is_resolved) {
+        if (row.resolved_at === null) {
+            const browserTime = UTCToBrowserTime(row.started_at)
+            return (
+                <div className='flex flex-col justify-center items-end h-8'>
+                    <span>Pending ...</span>
+                    <span className='text-xs text-base-content/70'>Started: {browserTime}</span>
+                </div>
+            )
+        } else {
             const timeDiff = subtractDates(row.started_at, row.resolved_at)
             const time = secondsToTime(timeDiff)
             const browserTime = UTCToBrowserTime(row.resolved_at)
@@ -179,14 +175,6 @@ const SortableTable = ({columns, data, onDelete, onError, filter, resolvedFilter
                 <div className='flex flex-col justify-center items-end h-8'>
                     <span>Resolved in {time}</span>
                     <span className='text-xs text-base-content/70'>Ended: {browserTime}</span>
-                </div>
-            )
-        } else {
-            const browserTime = UTCToBrowserTime(row.started_at)
-            return (
-                <div className='flex flex-col justify-center items-end h-8'>
-                    <span>Pending ...</span>
-                    <span className='text-xs text-base-content/70'>Started: {browserTime}</span>
                 </div>
             )
         }
@@ -205,11 +193,11 @@ const SortableTable = ({columns, data, onDelete, onError, filter, resolvedFilter
         }
     }
 
-    const renderIsResolved = (colVal: any) => {
-        if (colVal) {
-            return '✓'
-        } else {
+    const renderIsResolved = (resolved_at: any) => {
+        if (resolved_at === null) {
             return '✗'
+        } else {
+            return '✓'
         }
     }
 
@@ -234,7 +222,7 @@ const SortableTable = ({columns, data, onDelete, onError, filter, resolvedFilter
                             {col.key === 'resolved_at' && row[col.key] === null && 'Unresolved'}
                             {col.key === 'new_message' && renderTableButtons(row)}
                             {/* {col.key === 'new_message' && setupMessage(row)} */}
-                            {col.key === 'is_resolved' && renderIsResolved(row[col.key])}
+                            {col.key === 'is_resolved' && renderIsResolved(row.resolved_at)}
                         </td>
                     ))}
                 </tr>
@@ -242,6 +230,18 @@ const SortableTable = ({columns, data, onDelete, onError, filter, resolvedFilter
             </tbody>
         </table>
     )
+}
+
+export const UTCToBrowserTime = (time: string):string => {
+    const d = new Date(time).toLocaleString('default', {
+        month: 'short',
+        day: '2-digit',
+        year: 'numeric',
+        hour: '2-digit',
+        hour12: false,
+        minute: '2-digit'
+    })
+    return d
 }
 
 export default SortableTable

@@ -1,6 +1,7 @@
 import { useState, useRef } from 'react'
 import type { Incident } from './types'
 import ToastNotification from './ToastNotification'
+import { UTCToBrowserTime } from './SortableTable'
 
 interface ModalProps {
     buttonText: React.ReactNode
@@ -44,6 +45,8 @@ export const IncidentEditModal = ({editIcon, incidentID}: IncidentEditProps) => 
     const [loading, setLoading] = useState<boolean>(true)
     const [error, setError] = useState<string | null>(null)
     const [isSuccess, setIsSuccess] = useState<boolean>(false)
+    const [isDataSubmit, setIsDataSubmit] = useState<boolean>(false)
+    const [infoMessage, setInfoMessage] = useState<string>('')
     const [submitBtnBg, setSubmitBtnBg] = useState<string>('btn-neutral')
 
     const [id, setID] = useState<string>('')
@@ -72,13 +75,10 @@ export const IncidentEditModal = ({editIcon, incidentID}: IncidentEditProps) => 
             setServiceName(data.service_name)
             setStartedAt(data.started_at)
             if (data.resolved_at === null) {
-                console.log("Fetched: ResolvedAt is null. IsResolved:", data.is_resolved)
                 setResolvedAt('')
-                setIsResolved(data.is_resolved)
+                setIsResolved(false)
             } else {
-                console.log("Fetched: IsResolved:", data.is_resolved)
                 setResolvedAt(data.resolved_at)
-                console.log("ResolvedAt is", data.resolved_at)
                 setOriginalResolvedAt(data.resolved_at)
             }
         } catch (err) {
@@ -115,17 +115,18 @@ export const IncidentEditModal = ({editIcon, incidentID}: IncidentEditProps) => 
 
     const patchIncident = async () => {
         try {
-            console.log(`Trying so send this data:, ${id}, ${title}, ${severity}, ${serviceName}, ${startedAt}, ${ await timeStringToUTC(resolvedAt)}`)
-
             const response = await fetch(`http://localhost:8080/incident/${incidentID}`, {
                 method: 'PATCH',
                 headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify({id: id, title: title, severity: severity, service_name: serviceName, started_at: startedAt, resolved_at: await timeStringToUTC(resolvedAt)})
             })
             if (!response?.ok) {
-                const errorData = await response.json()
+                const errorData = await response?.json()
                 console.log("Error response", errorData)
                 throw new Error(`- ${errorData.error}`)
+            } else {
+                const data = await response?.json()
+                setInfoMessage(data.info)
             }
             setIsSuccess(true)
         } catch (err) {
@@ -142,9 +143,16 @@ export const IncidentEditModal = ({editIcon, incidentID}: IncidentEditProps) => 
         }
         if (isSuccess) {
             return (
-                <ToastNotification duration={5000} message='Successfully edited new incident' toastLevel='alert-success' toastPos='toast-top toast-right' />
+                <ToastNotification duration={5000} message='Successfully changed incident' toastLevel='alert-success' toastPos='toast-top toast-right' />
             )
         }
+        if (infoMessage !== '') {
+            return (
+                <ToastNotification duration={5000} message={`Info - ${infoMessage}`} toastLevel='alert-info' toastPos='toast-top toast-right' />
+            )
+        }
+        // After rendering a notification - reset the button
+        setIsDataSubmit(false)
     }
 
     const RenderResolvedAtField = () => {
@@ -152,7 +160,7 @@ export const IncidentEditModal = ({editIcon, incidentID}: IncidentEditProps) => 
         const ResolvedAtField = () => {
             return (
                 <>
-                <label className="flex items-center label">Resolved at<span className="badge badge-soft badge-xs ml-0.5">Optional</span></label>
+                <label className="flex items-center label">Resolved at<span className="badge badge-soft badge-xs bg-base-300 ml-0.5">Optional</span></label>
                 <label className="input mb-4 lg:min-w-[20vw]">
                     <input value={resolvedAt} onChange={(e) => {
                         setResolvedAt(e.target.value)
@@ -162,15 +170,16 @@ export const IncidentEditModal = ({editIcon, incidentID}: IncidentEditProps) => 
             )
         }
 
-        if (isResolved !== false || originalResolvedAt !== undefined) {
+        if (isResolved !== false && originalResolvedAt !== undefined) {
             return (
                 <>
-                <div className='flex justify-between w-55 items-center'>
+                <div className='flex justify-between items-center'>
                     <div className='flex flex-col'>
-                        <span>Change ResolvedAt ?</span>
-                        <span className='text-gray-500'>({originalResolvedAt})</span>
+                        <span className='label'>Change resolved date</span>
                     </div>
-                    <input type='checkbox' className='toggle' onChange={() => setEnableResolvedAtOption(!enableResolvedAtOption)} checked={enableResolvedAtOption}></input>
+                    <div className='mr-1'>
+                        <input type='checkbox' className='toggle' onChange={() => setEnableResolvedAtOption(!enableResolvedAtOption)} checked={enableResolvedAtOption}></input>
+                    </div>
                 </div>
                 <div className='mt-2'>
                     {enableResolvedAtOption && <ResolvedAtField />}
@@ -184,7 +193,8 @@ export const IncidentEditModal = ({editIcon, incidentID}: IncidentEditProps) => 
 
     return (
         <>
-        {RenderToast()}
+        {/* Todo: This does not seem to show toasts */}
+        {isDataSubmit === true && RenderToast()}
         <div className='tooltip tooltip-bottom tooltip-info' data-tip='Edit'>
             <button className='btn btn-xs btn-ghost hover:bg-base-100 hover:border-base-content active:btn-warning' onClick={() => {
                 modalRef.current?.showModal()
@@ -194,9 +204,25 @@ export const IncidentEditModal = ({editIcon, incidentID}: IncidentEditProps) => 
         </div>
         <dialog ref={modalRef} className="modal modal-bottom sm:modal-middle">
             <div className="modal-box w-fit bg-base-300">
-                <div className='m-1'>
-                    <span className='text-lg font-semibold'>Editing incident </span>
-                    <span className='text-lg font-bold bg-linear-to-r from-violet-600 to-blue-500 text-transparent bg-clip-text'>{incidentID}</span>
+                <div className='flex flex-col m-1 justify-center items-start'>
+                    <div>
+                        <span className='text-xl font-semibold pr-1'>Editing incident</span>
+                        <span className='text-xl font-bold bg-linear-to-r from-violet-600 to-blue-500 text-transparent bg-clip-text px-0.5'>{incidentID}</span>
+                    </div>
+                    <div className='flex items-center'>
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="size-4 mr-1">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M7.864 4.243A7.5 7.5 0 0 1 19.5 10.5c0 2.92-.556 5.709-1.568 8.268M5.742 6.364A7.465 7.465 0 0 0 4.5 10.5a7.464 7.464 0 0 1-1.15 3.993m1.989 3.559A11.209 11.209 0 0 0 8.25 10.5a3.75 3.75 0 1 1 7.5 0c0 .527-.021 1.049-.064 1.565M12 10.5a14.94 14.94 0 0 1-3.6 9.75m6.633-4.596a18.666 18.666 0 0 1-2.485 5.33" />
+                        </svg>
+                        <span className='label px-0.5'>Started {UTCToBrowserTime(startedAt)}</span>
+                    </div>
+                    {originalResolvedAt !== undefined && originalResolvedAt !== null &&
+                        <div className='flex items-center'>
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="size-4 mr-1">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M3 3v1.5M3 21v-6m0 0 2.77-.693a9 9 0 0 1 6.208.682l.108.054a9 9 0 0 0 6.086.71l3.114-.732a48.524 48.524 0 0 1-.005-10.499l-3.11.732a9 9 0 0 1-6.085-.711l-.108-.054a9 9 0 0 0-6.208-.682L3 4.5M3 15V4.5" />
+                            </svg>
+                            <span className='label px-0.5'>Ended {UTCToBrowserTime(originalResolvedAt)}</span>
+                        </div>
+                    }
                 </div>
                 <fieldset className="fieldset rounded-box shadow p-4 bg-base-200">
                     <div className="flex flex-col">
@@ -221,6 +247,7 @@ export const IncidentEditModal = ({editIcon, incidentID}: IncidentEditProps) => 
                     <div className="flex flex-col items-center">
                         <button onClick={() => {
                             patchIncident()
+                            setIsDataSubmit(true)
                             modalRef.current?.close()
                         }} className={`btn ${submitBtnBg} border-base-content mt-2 px-6`} onMouseEnter={() => setSubmitBtnBg("btn-info")} onMouseLeave={() => setSubmitBtnBg("btn-neutral")}>Edit</button>
                     </div>

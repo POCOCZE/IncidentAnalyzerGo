@@ -34,7 +34,7 @@ export const IncidentReportProvider = ({ children }: { children: React.ReactNode
                 if (!response.ok) {
                     throw new Error(`HTTP ${response.status}`)
                 }
-                const data: IncidentReport = await response.json()
+                const data: IncidentReport = await response?.json()
                 setReport(data)
                 setLoading(false)
             } catch (err) {
@@ -52,9 +52,9 @@ export const IncidentReportProvider = ({ children }: { children: React.ReactNode
     )
 }
 
-const useIncidentReport = () => {
+export const useIncidentReport = () => {
     const context = useContext(IncidentReportContext)
-    if (!context) {
+    if (!context || context === undefined) {
         throw new Error("useIncidentReport must be within IncidentReportProvider")
     }
     return context
@@ -109,15 +109,15 @@ export const IncidentReportCenter = () => {
     }
 
     return (
-        <div className="flex flex-col items-center grow rounded-xl h-[97vh] m-4 bg-base-200">
+        <div className="flex flex-col items-center grow rounded-lg h-[97vh] m-4 bg-base-200 border border-base-content/15">
             <span className="flex bg-linear-to-r text-3xl font-bold p-2 from-[#3388ff] to-[#2f64b9] text-transparent bg-clip-text">Report</span>
             <div className="flex flex-col justify-start overflow-auto">
                 <div className="flex flex-col overflow-auto">
                     <span className="text-xl text-base-content/90 font-semibold text-right mx-2">Preview</span>
-                    <pre className="text-xs bg-gray-200 dark:bg-black text-base-content/90 p-4 rounded-xl overflow-auto">{JSON.stringify(report, null, 2)}</pre>
+                    <pre className="text-xs bg-gray-200 dark:bg-black text-base-content/90 p-4 rounded-lg overflow-auto">{JSON.stringify(report, null, 2)}</pre>
                 </div>
                 <div className="m-2">
-                    {DownloadReport()}
+                    <DownloadReport />
                 </div>
             </div>
         </div>
@@ -177,65 +177,18 @@ export const IncidentReportSidebar = () => {
     )
 }
 
-export const IncidentsUnresolved = () => {
-    const { report, loading } = useIncidentReport()
+// export const IncidentsUnresolvedText = () => {
+//     const { report } = useIncidentReport()
 
-    if (loading) {
-        return (
-            <div className="flex w-30 justify-center items-center flex-col gap-4">
-                <div className="skeleton h-4 w-full"></div>
-                <div className="skeleton h-4 w-20"></div>
-                <div className="skeleton h-4 w-full"></div>
-                <div className="skeleton h-4 w-14"></div>
-            </div>
-        )
-    }
-
-    const statClassName = 'stat-value text-xl'
-
-    const handleTotalUnresolved = () => {
-        if (report?.unresolved_ids === undefined) {
-            return (
-                <div className={statClassName}>NaN</div>
-            )
-        }
-        if (report?.unresolved_ids.length === 0) {
-            return (
-                <div>
-                    <span>All incidents resolved.</span>
-                </div>
-            )
-        } else {
-            return (
-                <div className="flex flex-col items-center m-2">
-                    <div className="flex">
-                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="red" className="size-6">
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m9-.75a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9 3.75h.008v.008H12v-.008Z" />
-                        </svg>
-                        <span className="text font-semibold ml-1">Unresolved</span>
-                    </div>
-                    <span className="text-xl text-red-500 font-bold">{report?.unresolved_ids?.length}</span>
-                    <button className="btn btn-sm btn-neutral border-base-content mt-4 m-0.5 px-5.5" disabled>More</button>
-                </div>
-            )
-        }
-    }
-
-    return handleTotalUnresolved()
-}
-
-export const IncidentsUnresolvedText = () => {
-    const { report } = useIncidentReport()
-
-    const handleTotalUnresolved = () => {
-        if (report?.unresolved_ids === undefined) {
-            return
-        }
-        if (report?.unresolved_ids.length === 0) {
-            return
-        } else {
-            return report?.unresolved_ids.length
-        }
-    }
-    return handleTotalUnresolved()
-}
+//     const handleTotalUnresolved = () => {
+//         if (report?.unresolved_ids === undefined) {
+//             return
+//         }
+//         if (report?.unresolved_ids.length === 0) {
+//             return
+//         } else {
+//             return report?.unresolved_ids.length
+//         }
+//     }
+//     return handleTotalUnresolved()
+// }

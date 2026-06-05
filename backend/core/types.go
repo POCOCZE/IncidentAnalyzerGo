@@ -1,16 +1,19 @@
 package core
 
-import "time"
+import (
+	"context"
+	"time"
+)
 
 type Incident struct {
 	ID         string `json:"id" validate:"required"`
 	Title      string `json:"title" validate:"required"`
 	Severity   string `json:"severity" validate:"required"`
-	Service    string `json:"service_name" validate:"required"`
+	ServiceName    string `json:"service_name" validate:"required"`
 	StartedAt  *time.Time `json:"started_at" validate:"required"`
 	ResolvedAt *time.Time `json:"resolved_at"`
-	Message	   string `json:"message"`
-	IsResolved bool `json:"is_resolved"`
+	// Message	   string `json:"message"`
+	// IsResolved bool `json:"is_resolved"`
 }
 
 type IncidentsFile struct {
@@ -21,8 +24,8 @@ type IncidentReportDetails struct {
 	Title      string `json:"title"`
 	Severity   string `json:"severity,omitempty"`
 	Service    string `json:"service,omitempty"`
-	Message    string `json:"message"`
-	IsResolved bool   `json:"is_resolved"`
+	// Message    string `json:"message"`
+	// IsResolved bool   `json:"is_resolved"`
 }
 
 type IncidentReport struct {
@@ -40,11 +43,11 @@ type IncidentDuration struct {
 }
 
 type IncidentStorage interface {
-	GetAll() ([]Incident, error)
-	GetByID(id string) (Incident, error)
-	Add(incident Incident) error
-	AddList(incidents []Incident) error
-	Edit(id string, incident Incident) error
-	DeleteByID(id string) error
-	DeleteAll() error
+	GetAll(ctx context.Context) ([]Incident, error)
+	GetByID(ctx context.Context, id string) (Incident, error)
+	Add(ctx context.Context, incident Incident) (int, error)
+	AddList(ctx context.Context, incidents []Incident) (int, error)
+	Edit(ctx context.Context, id string, incident Incident) error
+	DeleteByID(ctx context.Context, id string) error
+	DeleteAll(ctx context.Context) error
 }

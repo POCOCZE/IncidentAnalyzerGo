@@ -36,15 +36,15 @@ const HealthStatus = () => {
     if (error) {
         // return <ToastNotification duration={10000} message={`Error ${error}`} toastLevel='alert-error' toastPos='toast-top toast-right'/>
         return (
-            <div className="flex items-center rounded-xl p-1 bg-red-100">
+            <div className="flex items-center rounded-lg p-1 bg-red-100 border border-base-content/15">
                 <div aria-label="error" className="status status-error animate-pulse"></div>
-                <span className="text-sm text-base-content pl-1">Status</span>
+                <span className="text-xs text-base-content pl-1">Status</span>
             </div>
         )
     }
 
     return (
-        <div className="flex items-center bg-base-200 rounded-xl p-1 shadow">
+        <div className="flex items-center bg-base-200 rounded-lg p-1 shadow border border-base-content/15">
             <div aria-label="success" className="status status-success animate-none"></div>
             <span className="text-xs text-base-content pl-1">Status</span>
         </div>

@@ -12,7 +12,12 @@ func getReportHandler(store IncidentStorage) http.HandlerFunc {
 		service := r.URL.Query().Get("service")
 		id := r.URL.Query().Get("id")
 		w.Header().Add("Content-Type", "application/json")
-		incidents, _ := store.GetAll()
+		incidents, err := store.GetAll(r.Context())
+		if err != nil {
+			w.WriteHeader(http.StatusBadRequest)
+			encodeJSON(w, map[string]string{"error": fmt.Sprintf("%s", err)}, "")
+			log.Printf("%s", err)
+		}
 		report, err := BuildReport(incidents)
 		if err != nil {
 			w.WriteHeader(http.StatusBadRequest)

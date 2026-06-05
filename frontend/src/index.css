@@ -2,13 +2,42 @@
 @plugin "daisyui" {
     themes: light --default, my_dark --prefersdark;
 }
-/* @plugin "daisyui/theme" {
-    name: "cupcake";
+
+@plugin "daisyui/theme" {
+    name: "light";
     default: true;
-    --color-base-100: rgb(205 205 205);
-    --color-primary: blue;
-    --color-secondary: teal;
-} */
+    prefersdark: false;
+    color-scheme: "light";
+    --color-base-100: oklch(98% 0 0);
+    --color-base-200: oklch(96% 0.001 286.375);
+    --color-base-300: oklch(92% 0.004 286.32);
+    --color-base-content: oklch(21% 0.006 285.885);
+    --color-primary: oklch(44% 0.043 257.281);
+    --color-primary-content: oklch(98% 0.003 247.858);
+    --color-secondary: oklch(58% 0.158 241.966);
+    --color-secondary-content: oklch(97% 0.013 236.62);
+    --color-accent: oklch(44% 0.03 256.802);
+    --color-accent-content: oklch(98% 0.002 247.839);
+    --color-neutral: oklch(21% 0.006 285.885);
+    --color-neutral-content: oklch(98% 0 0);
+    --color-info: oklch(54% 0.245 262.881);
+    --color-info-content: oklch(97% 0.014 254.604);
+    --color-success: oklch(0.67 0.22 141);
+    --color-success-content: oklch(98% 0.031 120.757);
+    --color-warning: oklch(82% 0.189 84.429);
+    --color-warning-content: oklch(98% 0.022 95.277);
+    --color-error: oklch(0.65 0.23 26.67);
+    --color-error-content: oklch(97% 0.013 17.38);
+    --radius-selector: 2rem;
+    --radius-field: 1rem;
+    --radius-box: 0.5rem;
+    --size-selector: 0.25rem;
+    --size-field: 0.25rem;
+    --border: 1px;
+    --depth: 0;
+    --noise: 0;
+}
+
 
 @plugin "daisyui/theme" {
     name: "my_dark";
@@ -35,12 +64,12 @@
     --color-warning-content: oklch(27% 0.077 45.635);
     --color-error: oklch(0.65 0.23 26.67);
     --color-error-content: oklch(28% 0.109 3.907);
-    --radius-selector: 1rem;
+    --radius-selector: 2rem;
     --radius-field: 1rem;
-    --radius-box: 1rem;
+    --radius-box: 0.5rem;
     --size-selector: 0.25rem;
     --size-field: 0.25rem;
-    --border: 1.5px;
-    --depth: 1;
-    --noise: 1;
+    --border: 1px;
+    --depth: 0;
+    --noise: 0;
 }
