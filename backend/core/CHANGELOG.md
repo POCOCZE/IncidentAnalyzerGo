@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.3.2](https://github.com/POCOCZE/IncidentAnalyzerGo/compare/backend/core/v0.3.1...backend/core/v0.3.2) (2026-06-05)
+
+
+### Bug Fixes
+
+* :bug: Fixed issues with context ([cfcf778](https://github.com/POCOCZE/IncidentAnalyzerGo/commit/cfcf778449dc8dc2b31bd0f57e685ebbb9f631ff))
+* :bug: Uncommented functions that are needed ([f5da33f](https://github.com/POCOCZE/IncidentAnalyzerGo/commit/f5da33f6e6d3525dafe5ddc10137dd518ae6ede2))
+* :bug: Updated response messages ([3b8530a](https://github.com/POCOCZE/IncidentAnalyzerGo/commit/3b8530a1b0f3a24586e5039e2a17c4dd384a5392))
+* :construction: Added ctx (context.Context) ([3dd845f](https://github.com/POCOCZE/IncidentAnalyzerGo/commit/3dd845f5b76e7762a7f5da3fdb09b6e2b0fba3c5))
+* :recycle: Updated files and functions ([8e02d11](https://github.com/POCOCZE/IncidentAnalyzerGo/commit/8e02d118f6de35024341115cd2bda8cfdf9d93f2))
+
 ## [0.3.1](https://github.com/POCOCZE/IncidentAnalyzerGo/compare/backend/core/v0.3.0...backend/core/v0.3.1) (2026-05-28)
 
 

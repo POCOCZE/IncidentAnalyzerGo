@@ -1,5 +1,22 @@
 # Changelog
 
+## [0.4.0](https://github.com/POCOCZE/IncidentAnalyzerGo/compare/backend/self-hosted/v0.3.1...backend/self-hosted/v0.4.0) (2026-06-05)
+
+
+### Features
+
+* :sparkles: Switched from pgx to sqlc ([f240188](https://github.com/POCOCZE/IncidentAnalyzerGo/commit/f240188e4aa34470ab9dead1f9ec88993594d6f0))
+
+
+### Bug Fixes
+
+* :bug: Fixed adding multiple incidents ([33726a3](https://github.com/POCOCZE/IncidentAnalyzerGo/commit/33726a3c3f2ab6d760aa14228b17275ef96ea48e))
+* :bug: Fixed issues with context ([cfcf778](https://github.com/POCOCZE/IncidentAnalyzerGo/commit/cfcf778449dc8dc2b31bd0f57e685ebbb9f631ff))
+* :bug: Uncommented functions that are needed ([f5da33f](https://github.com/POCOCZE/IncidentAnalyzerGo/commit/f5da33f6e6d3525dafe5ddc10137dd518ae6ede2))
+* :bug: Updated response messages ([3b8530a](https://github.com/POCOCZE/IncidentAnalyzerGo/commit/3b8530a1b0f3a24586e5039e2a17c4dd384a5392))
+* :construction: Added ctx (context.Context) ([3dd845f](https://github.com/POCOCZE/IncidentAnalyzerGo/commit/3dd845f5b76e7762a7f5da3fdb09b6e2b0fba3c5))
+* :recycle: Updated files and functions ([8e02d11](https://github.com/POCOCZE/IncidentAnalyzerGo/commit/8e02d118f6de35024341115cd2bda8cfdf9d93f2))
+
 ## [0.3.1](https://github.com/POCOCZE/IncidentAnalyzerGo/compare/backend/self-hosted/v0.3.0...backend/self-hosted/v0.3.1) (2026-05-28)
 
 

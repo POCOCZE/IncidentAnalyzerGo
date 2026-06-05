@@ -1,5 +1,5 @@
 {
-  "backend/core": "0.3.1",
-  "backend/self-hosted": "0.3.1",
-  "frontend": "0.5.1"
+  "backend/core": "0.3.2",
+  "backend/self-hosted": "0.4.0",
+  "frontend": "0.5.2"
 }
