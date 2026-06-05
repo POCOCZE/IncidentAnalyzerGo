@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.5.2](https://github.com/POCOCZE/IncidentAnalyzerGo/compare/frontend/v0.5.1...frontend/v0.5.2) (2026-06-05)
+
+
+### Bug Fixes
+
+* :bug: Changed theme variables ([4bcac48](https://github.com/POCOCZE/IncidentAnalyzerGo/commit/4bcac482ec09b72a7b5b3d16900020105f554cc7))
+* :bug: Fixed component rendering ([5341cf3](https://github.com/POCOCZE/IncidentAnalyzerGo/commit/5341cf339dca5cd8892e5e3ffaea92644a1d69e8))
+* :bug: Fixed unresolv react compon rendering ([b2b66b5](https://github.com/POCOCZE/IncidentAnalyzerGo/commit/b2b66b5ab216d2dc89f89f177b290ce46eac2eaa))
+* :bug: Fixed various UI bugs ([a596bf3](https://github.com/POCOCZE/IncidentAnalyzerGo/commit/a596bf342d9faf96b918e6c87aa9b7943bd374c4))
+* :bug: Removed changetheme button ([f45bf7e](https://github.com/POCOCZE/IncidentAnalyzerGo/commit/f45bf7eb93cdd8695d1c8d72301fa76c5d12edd9))
+* :bug: Updated toast messages ([3c838d2](https://github.com/POCOCZE/IncidentAnalyzerGo/commit/3c838d2db9d7f15e53a90728f16cb08040cc892f))
+* :recycle: Updated files and functions ([8e02d11](https://github.com/POCOCZE/IncidentAnalyzerGo/commit/8e02d118f6de35024341115cd2bda8cfdf9d93f2))
+
 ## [0.5.1](https://github.com/POCOCZE/IncidentAnalyzerGo/compare/frontend/v0.5.0...frontend/v0.5.1) (2026-06-02)
 
 
