@@ -34,7 +34,7 @@ export const IncidentReportProvider = ({ children }: { children: React.ReactNode
                 if (!response.ok) {
                     throw new Error(`HTTP ${response.status}`)
                 }
-                const data: IncidentReport = await response.json()
+                const data: IncidentReport = await response?.json()
                 setReport(data)
                 setLoading(false)
             } catch (err) {
@@ -54,7 +54,7 @@ export const IncidentReportProvider = ({ children }: { children: React.ReactNode
 
 export const useIncidentReport = () => {
     const context = useContext(IncidentReportContext)
-    if (!context) {
+    if (!context || context === undefined) {
         throw new Error("useIncidentReport must be within IncidentReportProvider")
     }
     return context
@@ -117,7 +117,7 @@ export const IncidentReportCenter = () => {
                     <pre className="text-xs bg-gray-200 dark:bg-black text-base-content/90 p-4 rounded-lg overflow-auto">{JSON.stringify(report, null, 2)}</pre>
                 </div>
                 <div className="m-2">
-                    {DownloadReport()}
+                    <DownloadReport />
                 </div>
             </div>
         </div>

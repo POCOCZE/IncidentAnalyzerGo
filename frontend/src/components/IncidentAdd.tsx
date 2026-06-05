@@ -152,7 +152,7 @@ const IncidentAdd = () => {
                     <button onClick={() => {
                         postIncident()
                         setIsDataSubmit(true)
-                    }} className="btn btn-neutral bg-base-100 border-base-content/15 active:text-base-content mt-6 lg:w-40">Submit</button>
+                    }} className="btn btn-sm btn-neutral checked:text-black dark:checked:text-white border-base-content mt-6 m-0.5 px-5.5">Submit</button>
                 </div>
             </fieldset>
         </div>
