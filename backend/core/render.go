@@ -7,11 +7,10 @@ import (
 	"os"
 )
 
+// Prints report as JSON
+// MarshalIndent automatically sorts alphabetically
+// Output is []byte type that needs to be further processed
 func serveJsonOutput(report *IncidentReport) []byte {
-    // Prints report as JSON
-    // MarshalIndent automatically sorts alphabetically
-    // Output is []byte type that needs to be further processed
-
     jsonData, err := json.MarshalIndent(report, "", "  ")
     if err != nil {
         log.Fatalf("Error: Can't marshal indent data: %s", err)
@@ -20,6 +19,7 @@ func serveJsonOutput(report *IncidentReport) []byte {
     return jsonData
 }
 
+// Deprecated: Prints whole incident report. This is used for CLI purposes. Used as CLI output.
 func PrintReport(output string, report *IncidentReport) (err error) {
     if output == "stdout" {
         jsonData := serveJsonOutput(report)
