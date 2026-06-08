@@ -7,30 +7,29 @@ import (
 	"net/http"
 )
 
-func healthHandler(w http.ResponseWriter, r *http.Request) {
-	// Health status endpoint
-	// Set content type to application/json	
-	// Write OK as JSON reposnse
+// Health status endpoint
+func HealthHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	encodeJSON(w, map[string]string{"status": "ok"}, "")
+	EncodeJSON(w, map[string]string{"status": "ok"}, "")
 }
 
+// Set handlers, middlewares and start the HTTP server on particular port.
 func StartServer(ctx context.Context, port string, store IncidentStorage) {
 	mux := http.NewServeMux()
-	mux.HandleFunc("/healthz", healthHandler)
-	mux.HandleFunc("GET /report", getReportHandler(store))
-	mux.HandleFunc("GET /incidents", getAllHandler(store))
-	mux.HandleFunc("POST /incidents", addListHandler(store))
-	mux.HandleFunc("POST /incident", addHandler(store))
-	mux.HandleFunc("PATCH /incident/{id}", editHandler(store))
-	mux.HandleFunc("GET /incidents/{id}", getByIDHandler(store))
-	mux.HandleFunc("DELETE /incidents/{id}", deleteByIDHandler(store))
+	mux.HandleFunc("/healthz", HealthHandler)
+	mux.HandleFunc("GET /report", GetReportHandler(store))
+	mux.HandleFunc("GET /incidents", GetAllHandler(store))
+	mux.HandleFunc("POST /incidents", AddListHandler(store))
+	mux.HandleFunc("POST /incident", AddHandler(store))
+	mux.HandleFunc("PATCH /incident/{id}", EditHandler(store))
+	mux.HandleFunc("GET /incidents/{id}", GetByIDHandler(store))
+	mux.HandleFunc("DELETE /incidents/{id}", DeleteByIDHandler(store))
 
 	// !This removes all incidents forever! For testing.
-	mux.HandleFunc("DELETE /delete-all-incidents-forever", deleteAllHandler(store))
+	mux.HandleFunc("DELETE /delete-all-incidents-forever", DeleteAllHandler(store))
 
-	handler := corsMiddleware(mux)
+	handler := CorsMiddleware(mux)
 	log.Printf("INFO: Server listening on port :%s", port)
 	err := http.ListenAndServe(":"+port, handler)
 	if err != nil {
@@ -38,7 +37,8 @@ func StartServer(ctx context.Context, port string, store IncidentStorage) {
 	}
 }
 
-func encodeJSON(w http.ResponseWriter, content any, errMessage string) {
+// Used to structure JSON encoded responses.
+func EncodeJSON(w http.ResponseWriter, content any, errMessage string) {
 	if errMessage == "" {
 		// If custom error message variable is empty, use default
 		errMessage = "Error encoding response"

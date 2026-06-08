@@ -6,10 +6,8 @@ import (
 	"os"
 )
 
+// Open JSON file from input - file path
 func (f *IncidentsFile) OpenInputFile(file string) {
-    // Open JSON file from input - file path
-
-    // Read file
     data, err := os.ReadFile(file)
     if err != nil {
         log.Fatalf("Error reading file: %s", err)

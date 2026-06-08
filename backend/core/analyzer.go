@@ -5,10 +5,8 @@ import (
 	"time"
 )
 
+// Assign an incident to a map. Keys are nested - first is ServiceName, then incident ID. Value is IncidentReportDetails struct.
 func (r *IncidentReport) groupIncidentsByService(incident Incident) {
-    // For each service name assign ServiceDetails struct value.
-    // Service name keys are not sorted.
-
     // Check whether serviceName keys exist, create them otherwise
     _, exists := r.ByServices[incident.ServiceName]
     if !exists {
@@ -21,10 +19,8 @@ func (r *IncidentReport) groupIncidentsByService(incident Incident) {
     }
 }
 
+// Assign an incident to a map. Keys are nested - first is Severity, then incident ID. Value is IncidentReportDetails struct.
 func (r *IncidentReport) groupIncidentsBySeverity(incident Incident) {
-    // For each severity assign SeverityDetails struct value.
-    // Severity keys are not sorted by severity
-
     // Check whether serviceName keys exist, create them otherwise
     _, exists := r.BySeverity[incident.Severity]
     if !exists {
@@ -37,6 +33,7 @@ func (r *IncidentReport) groupIncidentsBySeverity(incident Incident) {
     }
 }
 
+// Assign an incident to a map. Key is ID of the incident. Value is IncidentReportDetails struct.
 func (r *IncidentReport) groupIncidentsByID(incident Incident) {
     r.ByID[incident.ID] = IncidentReportDetails{
         Title: incident.Title,
@@ -45,18 +42,17 @@ func (r *IncidentReport) groupIncidentsByID(incident Incident) {
     }
 }
 
+// Calculate MTTR (mean time to recovery)
+// First is all incident durations summed, and averaged across only resolved incidents. 
+// Unresolved are not kept in mind because their duration is effectively zero and thus would avoid the calculations.
 func (r *IncidentReport) CalcMTTRSec(durations map[string]IncidentDuration) error {
-    // Calculate Mean time to recovery - average across all
-    // First is all incident durations summed, and averaged across only resolved incidents. 
-    // Unresolved are not kept in mind because their duration is effectively zero and thus would avoid the calculations.
-
-    // Sum all incident times (unresolved gets 0 seconds)
+    // Sum all values in 'durations' map. Each key in the map represent duration (how much time was required to solve the particular incident) of each incident. Unresolved incidents have 0 seconds.
     var sum float64
     for _, incidentDuration := range durations {
         sum += incidentDuration.Seconds
     }
 
-    // Calculate average across only resolved ones
+    // Calculate average MTTR across all resolved incidents.
     if len(durations) == 0 {
         return fmt.Errorf("WARN: cannot devide by zero due to missing incidents")
     }
@@ -69,12 +65,11 @@ func (r *IncidentReport) CalcMTTRSec(durations map[string]IncidentDuration) erro
     return nil
 }
 
-func calcIncidentDuration(durations map[string]IncidentDuration, incident Incident) {
-    // , allIncidentsDuration map[string]float64 -> as output
-    // Calculate incident duration for all incidents
-    // Unresolved incidents will have 0 seconds duration, resolved one gets calculated
-
+// Calculate incident duration for all incidents. Unresolved incidents will have 0 seconds duration automatically.
+func CalcIncidentDuration(durations map[string]IncidentDuration, incident Incident) {
     var durationSec float64
+    
+    // Calculate time difference only for resolved incidents.
     if incident.ResolvedAt != nil {
         startedAt := incident.StartedAt
         resolvedAt := incident.ResolvedAt
@@ -88,9 +83,8 @@ func calcIncidentDuration(durations map[string]IncidentDuration, incident Incide
     }
 }
 
+// This is constructor function: inizialize structure for IncidentReport
 func NewIncidentReport() *IncidentReport {
-    // This is constructor function: Prepares structure for report
-    // Returns IncidentReport inizialized structure
     return &IncidentReport {
         ByServices: make(map[string]map[string]IncidentReportDetails),
         BySeverity: make(map[string]map[string]IncidentReportDetails),
@@ -98,31 +92,30 @@ func NewIncidentReport() *IncidentReport {
     }
 }
 
+// Group and calculate length of incidents. Returns an IncidentReport struct.
 func BuildReport(incidents []Incident) (*IncidentReport, error) {
-    // --- Initialize maps before they can be used --- //
+    // Initialize maps before they can be used
     report := NewIncidentReport()
     report.IncidentsCount = len(incidents)
 
-    // Create temporary duration storage
     durations := make(map[string]IncidentDuration)
     for _, incident := range incidents {
-        // --- Add unresolved to Slice --- //
+        // Add unresolved incidents to Slice
         if incident.ResolvedAt == nil {
             report.UnresolvedIDs = append(report.UnresolvedIDs, incident.ID)
         }
 
-        // --- Calculate incident duration and group incidents --- //
-        calcIncidentDuration(durations, incident)
+        // Calculate incident duration and group incidents
+        CalcIncidentDuration(durations, incident)
         report.groupIncidentsByService(incident)
         report.groupIncidentsBySeverity(incident)
         report.groupIncidentsByID(incident)
     }
 
-    // --- Calculate Mean time to recovery --- //
+    // Calculate MTTR, average across all incidents
     err := report.CalcMTTRSec(durations)
     if err != nil {
         return &IncidentReport{}, err
     }
-
     return report, nil
 }
