@@ -163,7 +163,7 @@ func DeleteByIDHandler(store IncidentStorage) http.HandlerFunc{
 	}
 }
 
-// WARNING! Delete all incidents
+// WARNING! Deletes all incidents.
 func DeleteAllHandler(store IncidentStorage) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Add("Content-Type", "application/json")
