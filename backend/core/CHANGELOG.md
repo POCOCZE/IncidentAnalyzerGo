@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.3.3](https://github.com/POCOCZE/IncidentAnalyzerGo/compare/backend/core/v0.3.2...backend/core/v0.3.3) (2026-06-08)
+
+
+### Bug Fixes
+
+* :pencil2: Updated typo in comment ([57f24ef](https://github.com/POCOCZE/IncidentAnalyzerGo/commit/57f24efa53aa16595e77b9682e7d7c163cae57ef))
+* :pencil2: Updated typo in comment ([d2e29c7](https://github.com/POCOCZE/IncidentAnalyzerGo/commit/d2e29c74f4cfc65cb6ca34e7d4a407c278f1d49d))
+
 ## [0.3.2](https://github.com/POCOCZE/IncidentAnalyzerGo/compare/backend/core/v0.3.1...backend/core/v0.3.2) (2026-06-05)
 
 
