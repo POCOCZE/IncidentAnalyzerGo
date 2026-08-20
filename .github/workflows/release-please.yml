@@ -1,3 +1,5 @@
+name: Release Please
+
 on:
   push:
     branches:
@@ -6,13 +8,24 @@ on:
 permissions:
   contents: write
   pull-requests: write
-
-name: release-please
+  issues: write
+  actions: write # Required for gh workflow run to dispatch docker-publish.yml
 
 jobs:
   release-please:
     runs-on: ubuntu-latest
     steps:
-      - uses: googleapis/release-please-action@v5
+      - uses: googleapis/release-please-action@45996ed1f6d02564a971a2fa1b5860e934307cf7 # ratchet:googleapis/release-please-action@v5
+        id: release
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
+          config-file: release-please-config.json
+          manifest-file: .release-please-manifest.json
+
+      - name: Trigger container release
+        if: steps.release.outputs.release_created == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ steps.release.outputs.tag_name }}
+        run: |-
+          gh workflow run docker-publish.yml --ref "$RELEASE_TAG"
