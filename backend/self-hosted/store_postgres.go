@@ -2,10 +2,16 @@ package main
 
 import (
 	"context"
+	"crypto/aes"
+	"crypto/cipher"
+	"encoding/base64"
 	"errors"
 	"fmt"
+	"log"
+	"os"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -15,8 +21,10 @@ import (
 )
 
 type PostgresStore struct {
-	Pool *pgxpool.Pool
+	Pool 	*pgxpool.Pool
 	Queries *database.Queries
+	GCM		cipher.AEAD
+	Enc		core.EncIncidentCols
 }
 
 func NewPostgresStore(ctx context.Context, connString string) (*PostgresStore, error) {
@@ -29,11 +37,34 @@ func NewPostgresStore(ctx context.Context, connString string) (*PostgresStore, e
 		return nil, fmt.Errorf("connecting to database: %w", err)
 	}
 
+	// prepare AES-GCM part
+	encryptionKeyB64 := os.Getenv(EnvEncryptionKey)
+	encryptionKey, err := base64.StdEncoding.DecodeString(encryptionKeyB64)
+	if err != nil {
+		log.Fatalf("failed to base64 decode string value with env var key %q", EnvTransportEncryptKey)
+	}
+
+	// build the GCM
+	block, err := aes.NewCipher(encryptionKey)
+	if err != nil {
+		log.Fatalf("[NewProductStore] failed to create new aes cipher: %s", err)
+	}
+	gcm, err := cipher.NewGCM(block)
+	if err != nil {
+		log.Fatalf("[NewProductStore] failed to create new gcm: %s", err)
+	}
+
 	queries := database.New(pool)
 	return &PostgresStore{
 		Pool: pool,
 		Queries: queries,
+		GCM: gcm,
 	}, nil
+}
+
+func CurrentUTCTime() *time.Time {
+	currentTime := time.Now().UTC()
+	return &currentTime
 }
 
 func timeToPgTimestamptz(t *time.Time) pgtype.Timestamptz {
@@ -51,13 +82,6 @@ func timeToPgTimestamptz(t *time.Time) pgtype.Timestamptz {
 	}
 }
 
-// func boolToPgBool(b bool) pgtype.Bool {
-// 	return pgtype.Bool{
-// 		Bool: b,
-// 		Valid: true,
-// 	}
-// }
-
 func pgTimestamptzToTime(pgTime pgtype.Timestamptz) *time.Time {
 	if !pgTime.Valid || pgTime.Time.IsZero() {
 		return nil
@@ -65,79 +89,159 @@ func pgTimestamptzToTime(pgTime pgtype.Timestamptz) *time.Time {
 	return &pgTime.Time
 }
 
-func (p *PostgresStore) incidentToAddParams(incident core.Incident) database.AddParams {
-	params := database.AddParams{
-		ID: incident.ID,
-		Title: incident.Title,
-		Severity: incident.Severity,
-		ServiceName: incident.ServiceName,
-		StartedAt: timeToPgTimestamptz(incident.StartedAt),
-		ResolvedAt: timeToPgTimestamptz(incident.ResolvedAt),
+func UUIDToPgUUID(id uuid.UUID) pgtype.UUID {
+	return pgtype.UUID{
+		Bytes: id,
+		Valid: id != uuid.Nil,
 	}
-	return params
 }
 
-func (p *PostgresStore) incidentToEditParams(id string, incident core.Incident) database.EditParams {
-	params := database.EditParams{
-		ID: incident.ID,
-		Title: incident.Title,
-		Severity: incident.Severity,
-		ServiceName: incident.ServiceName,
-		StartedAt: timeToPgTimestamptz(incident.StartedAt),
-		ResolvedAt: timeToPgTimestamptz(incident.ResolvedAt),
-		ID_2: id, 
+func PgUUIDToUUID(pgUUID pgtype.UUID) (uuid.UUID, error) {
+	if !pgUUID.Valid {
+		return uuid.Nil, fmt.Errorf("uuid is not valid")
 	}
-	return params
+	return pgUUID.Bytes, nil
 }
 
-func (p *PostgresStore) pgIncidentToIncident(pgIncident database.Incident) core.Incident {
+func (p *PostgresStore) pgIncidentToIncident(pgIncident database.Incident) (*core.Incident, error) {
+	incID, err := PgUUIDToUUID(pgIncident.ID)
+	if err != nil {
+		return nil, err
+	}
+	incOrgID, err := PgUUIDToUUID(pgIncident.OrgID)
+	if err != nil {
+		return nil, err
+	}
+	incNameBlindIdx, err := core.PgTextToString(pgIncident.NameBlindIdx)
+	if err != nil {
+		return nil, err
+	}
+	incCreatedBy, err := PgUUIDToUUID(pgIncident.CreatedBy)
+	if err != nil {
+		return nil, err
+	}
+
 	params := core.Incident{
-		ID: pgIncident.ID,
+		ID: incID,
+		OrgID: incOrgID,
+		Name: pgIncident.Name,
+		NameBlindIdx: incNameBlindIdx,
 		Title: pgIncident.Title,
 		Severity: pgIncident.Severity,
 		ServiceName: pgIncident.ServiceName,
 		StartedAt: pgTimestamptzToTime(pgIncident.StartedAt),
 		ResolvedAt: pgTimestamptzToTime(pgIncident.ResolvedAt),
+		CreatedBy: incCreatedBy,
+		CreatedAt: pgTimestamptzToTime(pgIncident.CreatedAt),
+		UpdatedAt: pgTimestamptzToTime(pgIncident.UpdatedAt),
 	}
-	return params
+	return &params, nil
 }
 
-func (p *PostgresStore) Add(ctx context.Context, incident core.Incident) (int, error) {
-	// check if incident already exist before adding.
-	inc, err := p.GetByID(ctx, incident.ID)
-	if errors.Is(err, pgx.ErrNoRows) {
-		// Incident does not exist - add it
-		params := p.incidentToAddParams(incident)
-		err = p.Queries.Add(ctx, params)
-		if err != nil {
-			return 0, err
+func (p *PostgresStore) Add(ctx context.Context, incident *core.Incident) (int, uuid.UUID, error) {
+	// Pre-check that incident fields (name, title, service_name) are 4 or more chars
+	minFieldLength := 4
+	checkFieldsLength := map[string]string{
+		"Name": incident.Name,
+		"Title": incident.Title,
+		"Service name": incident.ServiceName,
+	}
+
+	for name, value := range checkFieldsLength {
+		if len(value) < minFieldLength {
+			return 0, uuid.Nil, fmt.Errorf("field %q is less than %v", name, minFieldLength)
 		}
 	}
-	var duplicateCount int
-	if inc.ID == incident.ID {
-		duplicateCount = 1
-		// log.Printf("WARN: incident %q already exist, skipping\n", incident.ID)
+
+	// check if incident already exist before adding.
+	inc, err := p.GetByName(ctx, incident.Name)
+	var id uuid.UUID
+	if errors.Is(err, pgx.ErrNoRows) {
+		log.Printf("DEBUG: got errNoRows: %s", err)
+		// Incident does not exist - add it
+		// Assign UUIDv7 if not already set
+		log.Printf("DEBUG: Got incidentID %q", incident.ID)
+		if incident.ID == uuid.Nil {
+			id, err = uuid.NewV7()
+			if err != nil {
+				return 0, uuid.Nil, fmt.Errorf("failed to generate UUIDv7: %s", err)
+			}
+			log.Printf("DEBUG: generated UUIDv7 %q", id.String())
+			incident.ID = id
+		}
+		// Assign OrgID if incident does not have it already (could have it in cases when importing a bunch of incidents from file)
+		if incident.OrgID == uuid.Nil {
+			log.Printf("DEBUG: setting incOrgID %q", incOrgID.String())
+			incident.OrgID = incOrgID
+		}
+		// Assign current time to StartedAt field if empty
+		if incident.StartedAt == nil || incident.StartedAt.IsZero() {
+			log.Printf("DEBUG: setting current time to new incident %q for startedAt field", incident.ID.String())
+			incident.StartedAt = CurrentUTCTime()
+		}
+		// Assign UserID to CreatedBy field
+		if incident.CreatedBy == uuid.Nil {
+			log.Printf("DEBUG: setting incUserID %q", incUserID.String())
+			incident.CreatedBy = incUserID
+		}
+		// Assign current time to CreatedAt field if not exist
+		if incident.CreatedAt == nil || incident.CreatedAt.IsZero() {
+			log.Printf("DEBUG: setting current time to new incident %q for createdAt field", incident.ID.String())
+			incident.CreatedAt = CurrentUTCTime()
+		}
+		// Assign current time to UpdatedAt field if not exist
+		if incident.UpdatedAt == nil || incident.UpdatedAt.IsZero() {
+			log.Printf("DEBUG: setting current time to new incident %q for updatedAt field", incident.ID.String())
+			incident.UpdatedAt = CurrentUTCTime()
+		}
+
+		// create hash of incident name
+		hmacKeyB64 := os.Getenv(EnvHMACEncryptKey)
+		incident.NameBlindIdx = p.EncryptToHMAC(incident.Name, hmacKeyB64)
+
+		encIncidentCols := p.EncryptIncidentCols(&core.EncIncidentCols{
+			Name: incident.Name,
+			Title: incident.Title,
+			ServiceName: incident.ServiceName,
+		})
+
+		if err := p.Queries.Add(ctx, database.AddParams{
+			ID: UUIDToPgUUID(incident.ID),
+			OrgID: UUIDToPgUUID(incident.OrgID),
+			Name: encIncidentCols.Name,
+			// put the newly generated hash here
+			NameBlindIdx: core.StringToPgText(incident.NameBlindIdx),
+			Title: encIncidentCols.Title,
+			Severity: incident.Severity,
+			ServiceName: encIncidentCols.ServiceName,
+			StartedAt: timeToPgTimestamptz(incident.StartedAt),
+			ResolvedAt: timeToPgTimestamptz(incident.ResolvedAt),
+			CreatedBy: UUIDToPgUUID(incident.CreatedBy),
+			CreatedAt: timeToPgTimestamptz(incident.CreatedAt),
+			UpdatedAt: timeToPgTimestamptz(incident.UpdatedAt),
+		}); err != nil {
+			return 0, uuid.Nil, fmt.Errorf("[Add] failed to add incident: %s", err)
+		}
+		return 0, id, nil
 	}
 	if err != nil {
-		return 0, err
+		return 0, uuid.Nil, fmt.Errorf("[Add] failed to add incident: %s", err)
 	}
 
-	// Build report
-	incidents, err := p.GetAll(ctx)
-	if err != nil {
-		return 0, err
+	var duplicateCount int
+	// Must check for names because UUIDs are meant to be unique
+	if inc.Name == incident.Name {
+		log.Printf("DEBUG: found duplicate incident. name: %q", inc.Name)
+		duplicateCount = 1
+		log.Printf("WARN: incident %q already exist, skipping\n", incident.Name)
 	}
-	_, err = core.BuildReport(incidents)
-	if err != nil {
-		return 0, err
-	}
-	return duplicateCount, nil
+	return duplicateCount, id, nil
 }
 
-func(p *PostgresStore) AddList(ctx context.Context, incidents []core.Incident) (int, error) {
+func(p *PostgresStore) AddList(ctx context.Context, incidents *[]core.Incident) (int, error) {
 	var totalDuplicateCount int
-	for _, incident := range incidents {
-		duplicateCount, err := p.Add(ctx, incident)
+	for _, incident := range *incidents {
+		duplicateCount, _, err := p.Add(ctx, &incident)
 		totalDuplicateCount += duplicateCount
 		if err != nil {
 			return 0, err
@@ -146,36 +250,43 @@ func(p *PostgresStore) AddList(ctx context.Context, incidents []core.Incident) (
 	return totalDuplicateCount, nil
 }
 
-func(p *PostgresStore) Edit(ctx context.Context, id string, incident core.Incident) error {
-	var inc core.Incident
+func(p *PostgresStore) Edit(ctx context.Context, id uuid.UUID, incident *core.Incident) error {
 	inc, err := p.GetByID(ctx, id)
 	if err != nil {
 		return err
 	}
 
-	// Todo: restrict changing StartedAt too. Not yet implemented.
-	if inc.ID != incident.ID {
-		return fmt.Errorf("changing Incident ID is not allowed")
-	}
-	params := p.incidentToEditParams(id, incident)
-	err = p.Queries.Edit(ctx, params)
-	if err != nil {
-		return err
-	}
+	encIncidentCols := p.EncryptIncidentCols(&core.EncIncidentCols{
+		// restrict chanding incident name
+		Name: inc.Name,
+		Title: incident.Title,
+		ServiceName: incident.ServiceName,
+	})
 
-	// GetAll incidents to satisfy build report function
-	incidents, err := p.GetAll(ctx)
-	if err != nil {
-		return err
-	}
-	_, err = core.BuildReport(incidents)
-	if err != nil {
+	if err := p.Queries.Edit(ctx, database.EditParams{
+		ID: UUIDToPgUUID(inc.ID),
+		OrgID: UUIDToPgUUID(inc.OrgID),
+		Name: encIncidentCols.Name,
+		// Incident's name cannot be changed anyway, so no need to compute the hash again.
+		NameBlindIdx: core.StringToPgText(inc.NameBlindIdx),
+		Title: encIncidentCols.Title,
+		Severity: incident.Severity,
+		ServiceName: encIncidentCols.ServiceName,
+		// restrict changing StartedAt 
+		StartedAt: timeToPgTimestamptz(inc.StartedAt),
+		ResolvedAt: timeToPgTimestamptz(incident.ResolvedAt),
+		CreatedBy: UUIDToPgUUID(inc.CreatedBy),
+		CreatedAt: timeToPgTimestamptz(inc.CreatedAt),
+		UpdatedAt: timeToPgTimestamptz(CurrentUTCTime()),
+		// This represents incident UUID to edit - the rest of variables above are values to replace the original incident that user wants to edit.
+		ID_2: UUIDToPgUUID(id),
+	}); err != nil {
 		return err
 	}
 	return nil
 }
 
-func (p *PostgresStore) GetAll(ctx context.Context) ([]core.Incident, error) {
+func (p *PostgresStore) GetAll(ctx context.Context) (*[]core.Incident, error) {
 	pgIncidents, err := p.Queries.GetAll(ctx)
 	if err != nil {
 		return nil, err
@@ -183,38 +294,97 @@ func (p *PostgresStore) GetAll(ctx context.Context) ([]core.Incident, error) {
 
 	var incidents []core.Incident
 	for _, pgIncident := range pgIncidents {
-		inc := p.pgIncidentToIncident(pgIncident)
-		incidents = append(incidents, inc)
+		inc, err := p.pgIncidentToIncident(pgIncident)
+		if err != nil {
+			return nil, fmt.Errorf("failed to convert PG incident to incident: %s", err)
+		}
+
+		decIncidentCols, err := p.DecIncidentCols(&core.EncIncidentCols{
+			Name: inc.Name,
+			Title: inc.Title,
+			ServiceName: inc.ServiceName,
+		})
+		if err != nil {
+			return nil, fmt.Errorf("[GetAll] failed to get incidents: %s", err)
+		}
+		inc.Name = decIncidentCols.Name
+		inc.Title = decIncidentCols.Title
+		inc.ServiceName = decIncidentCols.ServiceName
+
+		incidents = append(incidents, *inc)
 	}
-	return incidents, nil
+	return &incidents, nil
 }
 
-func (p *PostgresStore) GetByID(ctx context.Context, id string) (core.Incident, error) {
-	pgIncident, err := p.Queries.GetByID(ctx, id)
+func (p *PostgresStore) GetByID(ctx context.Context, id uuid.UUID) (*core.Incident, error) {
+	pgIncident, err := p.Queries.GetByID(ctx, UUIDToPgUUID(id))
 	if err != nil {
-		// the sqlc always fails there when adding new incidents because it did not found
-		// I dont think failing to get an incident because it already exists is trully error because it says something valuable - that i can continue adding new incidents if this check fails.
-		return core.Incident{}, err
+		// Return error, most of the time it will be ErrNoRows. When such error occurs, it's sure that such incident is unique thus can be added / edited
+		return nil, err
 	}
-	inc := p.pgIncidentToIncident(pgIncident)
+	inc, err := p.pgIncidentToIncident(pgIncident)
+	if err != nil {
+		return nil, fmt.Errorf("failed to convert PG incident to incident: %s", err)
+	}
+
+	decIncidentCols, err := p.DecIncidentCols(&core.EncIncidentCols{
+		Name: inc.Name,
+		Title: inc.Title,
+		ServiceName: inc.ServiceName,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("[GetAll] failed to get incidents: %s", err)
+	}
+	inc.Name = decIncidentCols.Name
+	inc.Title = decIncidentCols.Title
+	inc.ServiceName = decIncidentCols.ServiceName
+
 	return inc, nil
 }
 
-func (p *PostgresStore) DeleteByID(ctx context.Context, id string) error {
-	err := p.Queries.DeleteByID(ctx, id)
+// Search whether incident's name exist. Names are unique so expect one row or nothing. Name will be converted into a hash and then compred with database column because 'name' column is encrypted by default.
+func (p *PostgresStore) GetByName(ctx context.Context, name string) (*core.Incident, error) {
+	// compares HMAC keys. Incident's name cannot be directly compared because its encrypted. Every encryption is unique to direct comparing is not possible. Thus we compare two hashed value - one is already in database, and we are comparing it with the incident's name that we wanna get more info.
+	hmacKeyB64 := os.Getenv(EnvHMACEncryptKey)
+	hmacNameB64 := p.EncryptToHMAC(name, hmacKeyB64)
+	pgIncident, err := p.Queries.GetByName(ctx, core.StringToPgText(hmacNameB64))
+	if err != nil {
+		return nil, err
+	}
+	inc, err := p.pgIncidentToIncident(pgIncident)
+	if err != nil {
+		return nil, fmt.Errorf("failed to convert PG incident to incident: %s", err)
+	}
+
+	decIncidentCols, err := p.DecIncidentCols(&core.EncIncidentCols{
+		Name: inc.Name,
+		Title: inc.Title,
+		ServiceName: inc.ServiceName,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("[GetAll] failed to get incidents: %s", err)
+	}
+	inc.Name = decIncidentCols.Name
+	inc.Title = decIncidentCols.Title
+	inc.ServiceName = decIncidentCols.ServiceName
+
+	return inc, nil
+}
+
+func (p *PostgresStore) DeleteByID(ctx context.Context, id uuid.UUID) error {
+	err := p.Queries.DeleteByID(ctx, UUIDToPgUUID(id))
 	if err != nil {
 		return err
 	}
 
-	// Get All incidents to satisfy function - rebuild report
-	incidents, err := p.GetAll(ctx)
-	if err != nil {
-		return err
-	}
-	_, err = core.BuildReport(incidents)
-	if err != nil {
-		return err
-	}
+	// // Get All incidents to satisfy function - rebuild report
+	// incidents, err := p.GetAll(ctx)
+	// if err != nil {
+	// 	return err
+	// }
+	// if _, err := core.BuildReport(incidents); err != nil {
+	// 	return err
+	// }
 	return nil
 }
 

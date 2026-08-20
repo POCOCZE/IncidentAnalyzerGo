@@ -9,7 +9,7 @@ import (
 func TestMTTRSec(t *testing.T) {
 	report := &core.IncidentReport{
 		IncidentsCount: 4,
-        UnresolvedIDs: []string{"Incident1", "Incident2"},
+        UnresolvedNames: []string{"Incident1", "Incident2"},
         MTTR: "",
 	}
 
