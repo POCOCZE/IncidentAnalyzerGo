@@ -14,8 +14,7 @@ func (f *IncidentsFile) OpenInputFile(file string) {
     }
 
     // Unmarshal encoded JSON data
-    err = json.Unmarshal(data, &f)
-    if err != nil {
+    if err := json.Unmarshal(data, &f); err != nil {
         log.Fatalf("Error unmarshal JSON file: %s", err)
     }
 }
