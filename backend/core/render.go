@@ -36,8 +36,7 @@ func PrintReport(output string, report *IncidentReport) (err error) {
         }()
 
         jsonData := serveJsonOutput(report)
-        _, err = file.Write(jsonData)
-        if err != nil {
+        if _, err := file.Write(jsonData); err != nil {
             return fmt.Errorf("error writing report to output file: %s", err)
         }
         return err

@@ -9,10 +9,16 @@ import (
 )
 
 type Incident struct {
-	ID          string
-	Title       string
-	Severity    string
-	ServiceName string
-	StartedAt   pgtype.Timestamptz
-	ResolvedAt  pgtype.Timestamptz
+	ID           pgtype.UUID
+	OrgID        pgtype.UUID
+	Name         string
+	NameBlindIdx pgtype.Text
+	Title        string
+	Severity     string
+	ServiceName  string
+	StartedAt    pgtype.Timestamptz
+	ResolvedAt   pgtype.Timestamptz
+	CreatedBy    pgtype.UUID
+	CreatedAt    pgtype.Timestamptz
+	UpdatedAt    pgtype.Timestamptz
 }

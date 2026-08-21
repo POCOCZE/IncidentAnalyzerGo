@@ -1,54 +1,38 @@
-import { useState, useEffect } from "react"
+import { useEffect } from "react"
+import { useFetcher } from "react-router"
+import type { GetHealthzLoaderData } from "../functions/getHealthz.loader"
+import { toast } from "react-toastify"
 
-interface HealthResponse {
-    status: string
-}
-
-const HealthStatus = () => {
-    const [status, setStatus] = useState<string | null>(null)
-    const [loading, setLoading] = useState<boolean>(true)
-    const [error, setError] = useState<string | null >(null)
+export const HealthStatus = () => {
+    const fetcher = useFetcher<GetHealthzLoaderData>()
 
     useEffect(() => {
-        const fetchHealth = async () => {
-            try {
-                const response = await fetch("http://localhost:8080/healthz")
-                if (!response.ok) {
-                    throw new Error(`HTTP ${response.status}`)
-                }
-                const data: HealthResponse = await response.json()
-                setStatus(data.status)
-                setLoading(false)
-            } catch (err) {
-                setError(err instanceof Error ? err.message : "Unknown error")
-                setLoading(false)
+        const interval = setInterval(() => {
+            if (fetcher.state === 'idle') {
+                fetcher.load("/api/healthz")
             }
-        }
-        fetchHealth()
-    }, []) // Empty array - run only once
+        }, 10000)
 
-    if (loading) {
-        return (
-            <span className="loading loading-spinner loading-xs rounded">Loading</span>
-        )
-    }
+        return () => clearInterval(interval)
+    }, [fetcher])
 
-    if (error) {
-        // return <ToastNotification duration={10000} message={`Error ${error}`} toastLevel='alert-error' toastPos='toast-top toast-right'/>
-        return (
-            <div className="flex items-center rounded-lg p-1 bg-red-100 border border-base-content/15">
-                <div aria-label="error" className="status status-error animate-pulse"></div>
-                <span className="text-xs text-base-content pl-1">Status</span>
-            </div>
-        )
+    const error = fetcher.data?.error
+    const status = fetcher.data?.status
+
+    useEffect(() => {
+        if (error) toast.error(error, {autoClose: false})
+    }, [error])
+
+    const healthStatusClass = () => {
+        if (error) return 'status-error'
+        if (status) return 'status-success'
+        return 'status-neutral'
     }
 
     return (
-        <div className="flex items-center bg-base-200 rounded-lg p-1 shadow border border-base-content/15">
-            <div aria-label="success" className="status status-success animate-none"></div>
-            <span className="text-xs text-base-content pl-1">Status</span>
+        <div className="flex items-center justify-center bg-base-200 rounded-lg py-0.5 px-1 shadow border border-base-content/15 w-fit">
+            <div aria-label="success" className={`status ${healthStatusClass()} animate-none`}></div>
+            <span className="text-xs text-base-content ml-1">API</span>
         </div>
     )
 }
-
-export default HealthStatus

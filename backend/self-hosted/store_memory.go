@@ -3,10 +3,11 @@ package main
 import (
 	"context"
 	"fmt"
-	"log"
+	"os"
 	"sync"
 
 	"github.com/go-playground/validator/v10"
+	"github.com/google/uuid"
 	"github.com/pococze/incidentanalyzergo/backend/core"
 )
 
@@ -26,15 +27,16 @@ func NewMemoryStore() *MemoryStore {
     }
 }
 
-func (m *MemoryStore) Add(ctx context.Context, incident core.Incident) (int, error) {
+func (m *MemoryStore) Add(ctx context.Context, incident *core.Incident) (int, uuid.UUID, error) {
 	// Add write lock with mutex
 	m.Mu.Lock()
 	defer m.Mu.Unlock()
 
+	// Todo: add UUID checking and generating like in Postgres store.
 	validate := validator.New(validator.WithRequiredStructEnabled())
 	err := validate.Struct(incident)
 	if err != nil {
-		return 0, err
+		return 0, uuid.Nil, err
 	}
 
 	// Check if the key already exist, this will prevent some bugs and errors
@@ -43,39 +45,50 @@ func (m *MemoryStore) Add(ctx context.Context, incident core.Incident) (int, err
 		// If incident already exist in slice - return error
 		// ? Not sure whether there is more effective solution that could immidiately find the incident without relying on loops - I would need to switch to `map`, but this would result in incompatibilities...
 		// ? I will keep it as it as, since Go is very fast.
-		if storedInc.ID == incident.ID {
+		if storedInc.Name == incident.Name {
 			duplicateIncCount = 1
 			// return fmt.Errorf("error: incident already exist")
 		}
 	}
 
-	// * This will be removed in the future
-	// Check if time is defined (resolvedAt can be null) and convert to UTC if needed
-	if incident.StartedAt.IsZero() {
-		incident.StartedAt = core.ConvertToUTC(incident.StartedAt)
-	} else {
-		return 0, fmt.Errorf("startedAt time is not valid")
+	// set userID, orgID and createdBy
+	userIDStr := os.Getenv(EnvIncUserID)
+	userID, err := uuid.Parse(userIDStr)
+	if err != nil {
+		return 0, uuid.Nil, fmt.Errorf("[Add] failed to parse uuidv7: %s", err)
 	}
-	if incident.ResolvedAt.IsZero() {
-		incident.ResolvedAt = core.ConvertToUTC(incident.ResolvedAt)
-	} else {
-		incident.ResolvedAt = nil
+	orgIDStr := os.Getenv(EnvIncOrgID)
+	orgID, err := uuid.Parse(orgIDStr)
+	if err != nil {
+		return 0, uuid.Nil, fmt.Errorf("[Add] failed to parse uuidv7: %s", err)
 	}
+
+	incident.ID, err = uuid.NewV7()
+	if err != nil {
+		return 0, uuid.Nil, fmt.Errorf("[Add] failed to create new uuidv7")
+	}
+	// incident.ID = 
+	incident.OrgID = orgID
+	// set current time if startedAt is missing, since its optinal
+	if incident.StartedAt == nil || incident.StartedAt.IsZero() {
+		incident.StartedAt = CurrentUTCTime()
+	}
+	incident.CreatedBy = userID
+	incident.CreatedAt = CurrentUTCTime()
+	incident.UpdatedAt = CurrentUTCTime()
 
 	// Append incident and rebuild report
-	m.Incidents = append(m.Incidents, incident)
-	_, err = core.BuildReport(m.Incidents)
-	if err != nil {
-		return 0, fmt.Errorf("error building report: %s", err)
+	m.Incidents = append(m.Incidents, *incident)
+	if _, err := core.BuildReport(&m.Incidents); err != nil {
+		return 0, uuid.Nil, fmt.Errorf("error building report: %s", err)
 	}
-
-	return duplicateIncCount, nil
+	return duplicateIncCount, uuid.Nil, nil
 }
 
-func (m *MemoryStore) AddList(ctx context.Context, incidents []core.Incident) (int, error) {
+func (m *MemoryStore) AddList(ctx context.Context, incidents *[]core.Incident) (int, error) {
 	var totalDuplicateCount int
-	for _, incident := range incidents {
-		duplicateCount, err := m.Add(ctx, incident)
+	for _, incident := range *incidents {
+		duplicateCount, _, err := m.Add(ctx, &incident)
 		totalDuplicateCount += duplicateCount
 		if err != nil {
 			return 0, err
@@ -84,67 +97,71 @@ func (m *MemoryStore) AddList(ctx context.Context, incidents []core.Incident) (i
 	return totalDuplicateCount, nil
 }
 
-func (m *MemoryStore) Edit(ctx context.Context, id string, incident core.Incident) error {
-	// * Info: id - original incident ID; incident - changed incident struct; Users are not allowed to edit incident ID - returns error (frontend blocks the input field too to edit it)
+// Edit incident; id - original incident ID; incident - changed incident struct; Users are not allowed to edit incident ID - returns error (frontend blocks the input field too to edit it)
+func (m *MemoryStore) Edit(ctx context.Context, id uuid.UUID, incident *core.Incident) error {
 	m.Mu.Lock()
 	defer m.Mu.Unlock()
 
-	log.Printf("Received incident: %v", incident)
-
-	var isFound bool
+	// var isFound bool
 	for i, inc := range m.Incidents {
 		if inc.ID == id {
-			// return error if user tries to change incident ID or startedAt (e.g. using a bug)
-			// Todo: changing startedAt is not yet implemented.
-			if inc.ID != incident.ID {
-				return fmt.Errorf("changing Incident ID is not allowed")
-			}
-			isFound = true
+			// isFound = true
 
-			// * This will be removed in the future
-			// Check if time is defined (resolvedAt can be null) and convert to UTC if needed
-			if !incident.StartedAt.IsZero() {
-				incident.StartedAt = core.ConvertToUTC(incident.StartedAt)
-			} else {
-				return fmt.Errorf("startedAt time is not valid")
-			}
-			if !incident.ResolvedAt.IsZero() {
-				incident.ResolvedAt = core.ConvertToUTC(incident.ResolvedAt)
-			} else {
-				incident.ResolvedAt = nil
-			}
+			// set required values before adding incident to slice			
+			incident.ID = inc.ID
+			incident.OrgID = inc.OrgID
+			incident.Name = inc.Name
+			// startedAt is guaranteed to not be a valid time
+			incident.StartedAt = new(incident.StartedAt.UTC())
 
-			m.Incidents[i] = incident
+			if incident.ResolvedAt == nil || incident.ResolvedAt.IsZero() {
+				incident.ResolvedAt = inc.ResolvedAt
+			} else {
+				incident.ResolvedAt = new(incident.ResolvedAt.UTC())
+			}
+			incident.CreatedBy = inc.CreatedBy
+			incident.CreatedAt = inc.CreatedAt
+			incident.UpdatedAt = CurrentUTCTime()
+
+			m.Incidents[i] = *incident
 			break
 		}
 	}
-	if isFound {
-		_, err := core.BuildReport(m.Incidents)
-		if err != nil {
-			return err
-		}
-	} else {
-		return fmt.Errorf("incident %q not found", id)
-	}
-
+	// if isFound {
+	// 	_, err := core.BuildReport(&m.Incidents)
+	// 	if err != nil {
+	// 		return err
+	// 	}
+	// } else {
+	// 	return fmt.Errorf("incident %q not found", id)
+	// }
 	return nil
 }
 
-func (m *MemoryStore) GetAll(ctx context.Context) ([]core.Incident, error) {
+func (m *MemoryStore) GetAll(ctx context.Context) (*[]core.Incident, error) {
 	incidents := m.Incidents
-	return incidents, nil
+	return &incidents, nil
 }
 
-func (m *MemoryStore) GetByID(ctx context.Context, id string) (core.Incident, error) {
+func (m *MemoryStore) GetByID(ctx context.Context, id uuid.UUID) (*core.Incident, error) {
 	for _, inc := range m.Incidents {
 		if inc.ID == id {
-			return inc, nil
+			return &inc, nil
 		}
 	}
-	return core.Incident{}, fmt.Errorf("incident ID %q not found", id)
+	return nil, fmt.Errorf("incident ID %q not found", id)
 }
 
-func (m *MemoryStore) DeleteByID(ctx context.Context, id string) error {
+func (m *MemoryStore) GetByName(ctx context.Context, name string) (*core.Incident, error) {
+	for _, inc := range m.Incidents {
+		if inc.Name == name {
+			return &inc, nil
+		}
+	}
+	return nil, fmt.Errorf("incident name %q not found", name)
+}
+
+func (m *MemoryStore) DeleteByID(ctx context.Context, id uuid.UUID) error {
 	m.Mu.Lock()
 	defer m.Mu.Unlock()
 
@@ -160,20 +177,18 @@ func (m *MemoryStore) DeleteByID(ctx context.Context, id string) error {
 	if found {
 		// Set new incidents list and rebuild report
 		m.Incidents = newIncidents
-		_, err := core.BuildReport(m.Incidents)
-		if err != nil {
-			return err
-		}
+		// _, err := core.BuildReport(&m.Incidents)
+		// if err != nil {
+		// 	return err
+		// }
 	} else {
         err := fmt.Errorf("incident ID %q was not found", id)
         return err
     }
-
 	return nil
 }
 
 func (m *MemoryStore) DeleteAll(ctx context.Context) error {
-	m.Incidents = []core.Incident{}
-
+	m.Incidents = nil
 	return nil
 }

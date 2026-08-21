@@ -13,30 +13,42 @@ import (
 
 const add = `-- name: Add :exec
 INSERT INTO incidents (
-        id, title, severity, service_name, started_at, resolved_at
+        id, org_id, name, name_blind_idx, title, severity, service_name, started_at, resolved_at, created_by, created_at, updated_at
         ) 
     VALUES (
-        $1, $2, $3, $4, $5, $6
+        $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12
         )
 `
 
 type AddParams struct {
-	ID          string
-	Title       string
-	Severity    string
-	ServiceName string
-	StartedAt   pgtype.Timestamptz
-	ResolvedAt  pgtype.Timestamptz
+	ID           pgtype.UUID
+	OrgID        pgtype.UUID
+	Name         string
+	NameBlindIdx pgtype.Text
+	Title        string
+	Severity     string
+	ServiceName  string
+	StartedAt    pgtype.Timestamptz
+	ResolvedAt   pgtype.Timestamptz
+	CreatedBy    pgtype.UUID
+	CreatedAt    pgtype.Timestamptz
+	UpdatedAt    pgtype.Timestamptz
 }
 
 func (q *Queries) Add(ctx context.Context, arg AddParams) error {
 	_, err := q.db.Exec(ctx, add,
 		arg.ID,
+		arg.OrgID,
+		arg.Name,
+		arg.NameBlindIdx,
 		arg.Title,
 		arg.Severity,
 		arg.ServiceName,
 		arg.StartedAt,
 		arg.ResolvedAt,
+		arg.CreatedBy,
+		arg.CreatedAt,
+		arg.UpdatedAt,
 	)
 	return err
 }
@@ -55,7 +67,7 @@ DELETE FROM incidents
 WHERE id = $1
 `
 
-func (q *Queries) DeleteByID(ctx context.Context, id string) error {
+func (q *Queries) DeleteByID(ctx context.Context, id pgtype.UUID) error {
 	_, err := q.db.Exec(ctx, deleteByID, id)
 	return err
 }
@@ -63,40 +75,58 @@ func (q *Queries) DeleteByID(ctx context.Context, id string) error {
 const edit = `-- name: Edit :exec
 UPDATE incidents
     SET id = $1,
-    title = $2,
-    severity = $3,
-    service_name = $4,
-    started_at = $5,
-    resolved_at = $6
-WHERE id = $7
-RETURNING id, title, severity, service_name, started_at, resolved_at
+    org_id = $2,
+    name = $3,
+    name_blind_idx = $4,
+    title = $5,
+    severity = $6,
+    service_name = $7,
+    started_at = $8,
+    resolved_at = $9,
+    created_by = $10,
+    created_at = $11,
+    updated_at = $12
+WHERE id = $13
+RETURNING id, org_id, name, name_blind_idx, title, severity, service_name, started_at, resolved_at, created_by, created_at, updated_at
 `
 
 type EditParams struct {
-	ID          string
-	Title       string
-	Severity    string
-	ServiceName string
-	StartedAt   pgtype.Timestamptz
-	ResolvedAt  pgtype.Timestamptz
-	ID_2        string
+	ID           pgtype.UUID
+	OrgID        pgtype.UUID
+	Name         string
+	NameBlindIdx pgtype.Text
+	Title        string
+	Severity     string
+	ServiceName  string
+	StartedAt    pgtype.Timestamptz
+	ResolvedAt   pgtype.Timestamptz
+	CreatedBy    pgtype.UUID
+	CreatedAt    pgtype.Timestamptz
+	UpdatedAt    pgtype.Timestamptz
+	ID_2         pgtype.UUID
 }
 
 func (q *Queries) Edit(ctx context.Context, arg EditParams) error {
 	_, err := q.db.Exec(ctx, edit,
 		arg.ID,
+		arg.OrgID,
+		arg.Name,
+		arg.NameBlindIdx,
 		arg.Title,
 		arg.Severity,
 		arg.ServiceName,
 		arg.StartedAt,
 		arg.ResolvedAt,
+		arg.CreatedBy,
+		arg.CreatedAt,
+		arg.UpdatedAt,
 		arg.ID_2,
 	)
 	return err
 }
 
 const getAll = `-- name: GetAll :many
-SELECT id, title, severity, service_name, started_at, resolved_at FROM incidents
+SELECT id, org_id, name, name_blind_idx, title, severity, service_name, started_at, resolved_at, created_by, created_at, updated_at FROM incidents
 `
 
 func (q *Queries) GetAll(ctx context.Context) ([]Incident, error) {
@@ -110,11 +140,17 @@ func (q *Queries) GetAll(ctx context.Context) ([]Incident, error) {
 		var i Incident
 		if err := rows.Scan(
 			&i.ID,
+			&i.OrgID,
+			&i.Name,
+			&i.NameBlindIdx,
 			&i.Title,
 			&i.Severity,
 			&i.ServiceName,
 			&i.StartedAt,
 			&i.ResolvedAt,
+			&i.CreatedBy,
+			&i.CreatedAt,
+			&i.UpdatedAt,
 		); err != nil {
 			return nil, err
 		}
@@ -127,20 +163,51 @@ func (q *Queries) GetAll(ctx context.Context) ([]Incident, error) {
 }
 
 const getByID = `-- name: GetByID :one
-SELECT id, title, severity, service_name, started_at, resolved_at FROM incidents
+SELECT id, org_id, name, name_blind_idx, title, severity, service_name, started_at, resolved_at, created_by, created_at, updated_at FROM incidents
 WHERE id = $1
 `
 
-func (q *Queries) GetByID(ctx context.Context, id string) (Incident, error) {
+func (q *Queries) GetByID(ctx context.Context, id pgtype.UUID) (Incident, error) {
 	row := q.db.QueryRow(ctx, getByID, id)
 	var i Incident
 	err := row.Scan(
 		&i.ID,
+		&i.OrgID,
+		&i.Name,
+		&i.NameBlindIdx,
 		&i.Title,
 		&i.Severity,
 		&i.ServiceName,
 		&i.StartedAt,
 		&i.ResolvedAt,
+		&i.CreatedBy,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
+const getByName = `-- name: GetByName :one
+SELECT id, org_id, name, name_blind_idx, title, severity, service_name, started_at, resolved_at, created_by, created_at, updated_at FROM incidents
+WHERE name_blind_idx = $1
+`
+
+func (q *Queries) GetByName(ctx context.Context, nameBlindIdx pgtype.Text) (Incident, error) {
+	row := q.db.QueryRow(ctx, getByName, nameBlindIdx)
+	var i Incident
+	err := row.Scan(
+		&i.ID,
+		&i.OrgID,
+		&i.Name,
+		&i.NameBlindIdx,
+		&i.Title,
+		&i.Severity,
+		&i.ServiceName,
+		&i.StartedAt,
+		&i.ResolvedAt,
+		&i.CreatedBy,
+		&i.CreatedAt,
+		&i.UpdatedAt,
 	)
 	return i, err
 }
