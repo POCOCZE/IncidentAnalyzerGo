@@ -2,7 +2,7 @@
 
 Easily self-hostable, open-source and encrypted by default. Quickly add, edit or remove incidents. Download report or see all incidents in a sortable table with filters!
 
-![incident-list](images/incident-list.png)
+![incident-list](images/list.png)
 
 ## REST API endpoints reference
 
@@ -27,8 +27,9 @@ Easily self-hostable, open-source and encrypted by default. Quickly add, edit or
 ## Screenshots
 
 <img src="images/homepage.png" alt="homepage" width="400"/>
-<img src="images/incident-add.png" alt="incident-add" width="400"/>
-<img src="images/incident-report.png" alt="incident-report" width="400"/>
+<img src="images/add.png" alt="incident-add" width="400"/>
+<img src="images/report.png" alt="incident-report" width="400"/>
+<img src="images/settings.png" alt="settings" width="400"/>
 
 ## Issues & Contributing
 
