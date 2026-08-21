@@ -110,7 +110,7 @@ jobs:
             org.opencontainers.image.created=${{ steps.meta-vars.outputs.build_date }}
             org.opencontainers.image.version=${{ steps.meta-vars.outputs.app_version }}
           build-args: |
-            APP_VERSION=${{ steps.meta-vars.outputs.app_version }}
+            VITE_APP_VERSION=${{ steps.meta-vars.outputs.app_version }}
             BUILD_DATE=${{ steps.meta-vars.outputs.build_date }}
             VCS_REF=${{ steps.meta-vars.outputs.vcs_ref }}
           outputs: type=image,name=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }},push-by-digest=true,name-canonical=true,push=true
