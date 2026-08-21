@@ -10,7 +10,7 @@ ENV VITE_APP_VERSION=$VITE_APP_VERSION
 RUN npm ci && npm run build
 
 # BACKEND: compile source code and static files to one binary
-FROM golang:1.26-alpine AS backend-builder
+FROM golang:1.27-alpine AS backend-builder
 
 WORKDIR /app/backend
 
