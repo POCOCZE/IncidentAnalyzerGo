@@ -379,13 +379,23 @@ jobs:
           RAW_MANIFEST=$(docker buildx imagetools inspect --raw "${PRIMARY_TAG}")
           echo "${RAW_MANIFEST}" | jq .
 
-          PLATFORMS=$(echo "${RAW_MANIFEST}" | jq -r '
+          PLATFORMS=$(jq -c '
             if .manifests then
-              [.manifests[] | select(.platform != null and .platform.os != "unknown" and .platform.architecture != "unknown") | "\(.platform.os)/\(.platform.architecture)"] | sort | unique
+              [
+                .manifests[]
+                | select(
+                    .platform != null
+                    and .platform.os != "unknown"
+                    and .platform.architecture != "unknown"
+                  )
+                | "\(.platform.os)/\(.platform.architecture)"
+              ]
+              | sort
+              | unique
             else
               []
-            fi
-          ')
+            end
+          ' <<< "${RAW_MANIFEST}")
 
           echo "Detected executable platforms: $(echo "${PLATFORMS}" | jq -c .)"
 
